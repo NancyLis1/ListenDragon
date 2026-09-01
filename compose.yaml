@@ -5,6 +5,8 @@ x-backend-common: &backend-common
     context: ./backend
     args:
       INSTALL_AI: "true"
+      TORCH_VERSION: "2.6.0"
+      TORCH_INDEX_URL: "https://download.pytorch.org/whl/cpu"
   env_file:
     - path: .env
       required: false

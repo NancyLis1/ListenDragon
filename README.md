@@ -20,6 +20,8 @@ GitHub Pages 只能托管静态前端。浏览器通过 `VITE_API_BASE_URL` 访�
 
 当前阶段交付的是 T03/T05 所需的架构决策、代码骨架和环境验证入口；媒体处理、检索与问答服务保留清晰接口，由后续迭代实现。
 
+完整 AI 镜像按 CPU/INT8 基线构建：Dockerfile 从 PyTorch 官方 CPU wheel 索引预装 `torch==2.6.0`，避免默认解析 CUDA 运行时。宿主机无需单独安装 FFmpeg，容器内已固化并验证 FFmpeg 7.1.5。
+
 ## 分支与提交约定
 
 - 默认分支：`main`

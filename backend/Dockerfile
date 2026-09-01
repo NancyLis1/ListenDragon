@@ -1,6 +1,8 @@
 FROM python:3.12-slim
 
 ARG INSTALL_AI=true
+ARG TORCH_VERSION=2.6.0
+ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
@@ -14,7 +16,12 @@ RUN apt-get update \
 COPY pyproject.toml README.md ./
 COPY src ./src
 
-RUN if [ "$INSTALL_AI" = "true" ]; then pip install --no-cache-dir ".[ai]"; else pip install --no-cache-dir .; fi
+RUN if [ "$INSTALL_AI" = "true" ]; then \
+        pip install --no-cache-dir --index-url "$TORCH_INDEX_URL" "torch==$TORCH_VERSION" \
+        && pip install --no-cache-dir ".[ai]"; \
+    else \
+        pip install --no-cache-dir .; \
+    fi
 
 RUN addgroup --system app && adduser --system --ingroup app app \
     && mkdir -p /data/uploads /data/artifacts /data/indexes /data/models \
