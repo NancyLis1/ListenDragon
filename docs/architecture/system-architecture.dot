@@ -1,0 +1,49 @@
+digraph ListenDragonArchitecture {
+  graph [rankdir=LR, bgcolor="transparent", pad="0.25", nodesep="0.38", ranksep="0.62", fontname="Microsoft YaHei"];
+  node [shape=box, style="rounded,filled", fontname="Microsoft YaHei", fontsize=10, color="#567199", fillcolor="#F3F7FC", fontcolor="#172033", margin="0.14,0.09"];
+  edge [fontname="Microsoft YaHei", fontsize=8.5, color="#6B7C93", fontcolor="#49566A", arrowsize=0.7];
+
+  user [label="用户\n浏览器", shape=oval, fillcolor="#FFF7E8", color="#B7791F"];
+
+  subgraph cluster_static {
+    label="静态前端域 · GitHub Pages";
+    color="#A9BDE0";
+    style="rounded,dashed";
+    web [label="React + TypeScript\nVite 构建产物", fillcolor="#EAF1FF"];
+  }
+
+  subgraph cluster_backend {
+    label="独立后端域 · 本机或云端容器";
+    color="#8FBFA9";
+    style="rounded";
+    api [label="FastAPI API\n上传 / 状态 / 摘要 / QA", fillcolor="#E9F7EF"];
+    worker [label="后台 Worker\n并发=1 · 可恢复任务", fillcolor="#E9F7EF"];
+    db [label="SQLite\n元数据 / 任务 / 会话", shape=cylinder, fillcolor="#F2F8F5"];
+    storage [label="本地数据卷\n视频 / 音频 / 转写 / 索引", shape=folder, fillcolor="#F2F8F5"];
+  }
+
+  subgraph cluster_pipeline {
+    label="媒体与智能处理组件";
+    color="#D7B77A";
+    style="rounded,dashed";
+    ffmpeg [label="FFmpeg\n音频提取 / ffprobe"];
+    asr [label="faster-whisper\nCPU INT8 ASR"];
+    chunk [label="清洗与分块\n时间戳保留"];
+    retrieve [label="混合检索\nFAISS + BM25 + RRF"];
+    llm [label="LLM 适配层\nOpenAI-compatible\n本地或云端", fillcolor="#FFF7E8"];
+  }
+
+  user -> web [label="HTTPS"];
+  web -> api [label="HTTPS / JSON / multipart\nVITE_API_BASE_URL"];
+  api -> db [label="事务写入 / 查询"];
+  api -> storage [label="流式上传 / 下载"];
+  worker -> db [label="租约领取 / 状态机"];
+  worker -> storage [label="读取 / 写入产物"];
+  worker -> ffmpeg;
+  ffmpeg -> asr;
+  asr -> chunk;
+  chunk -> retrieve [label="建立双索引"];
+  api -> retrieve [label="问题检索"];
+  retrieve -> llm [label="Top-6 + 时间戳"];
+  llm -> api [label="摘要 / 有依据回答"];
+}

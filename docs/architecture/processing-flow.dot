@@ -1,0 +1,24 @@
+digraph ProcessingFlow {
+  graph [rankdir=TB, bgcolor="transparent", pad="0.2", nodesep="0.28", ranksep="0.38", fontname="Microsoft YaHei"];
+  node [shape=box, style="rounded,filled", fontname="Microsoft YaHei", fontsize=10, color="#567199", fillcolor="#F3F7FC", fontcolor="#172033", margin="0.13,0.08"];
+  edge [fontname="Microsoft YaHei", fontsize=8.5, color="#6B7C93", fontcolor="#49566A", arrowsize=0.7];
+
+  upload [label="1  上传视频\n校验类型、大小，流式落盘并计算 SHA-256", fillcolor="#EAF1FF"];
+  queued [label="2  QUEUED\nSQLite 创建任务，API 返回 202 + video_id"];
+  extract [label="3  EXTRACTING\nffprobe 校验时长；FFmpeg 转 16 kHz 单声道 WAV"];
+  transcribe [label="4  TRANSCRIBING\nfaster-whisper 生成带起止时间的片段"];
+  translate [label="5  TRANSLATING（可选）\n保留原文；按配置生成目标语言文本"];
+  chunk [label="6  CHUNKING\n按语义/长度切分，保留时间戳与来源"];
+  index [label="7  INDEXING\n向量索引 + BM25 索引，原子发布"];
+  ready [label="8  READY\n可生成摘要并开始多轮问答", fillcolor="#E6F6EC", color="#2F855A"];
+  fail [label="FAILED\n记录 error_code 与可重试阶段\n临时产物清理", fillcolor="#FDECEC", color="#C44E4E"];
+  ask [label="问题 → 最多 3 个查询 → 双路 Top-8 → RRF → Top-6"];
+  answer [label="LLM 仅依据证据回答\n输出 [mm:ss-mm:ss] 引用；证据不足则拒答", fillcolor="#FFF7E8", color="#B7791F"];
+
+  upload -> queued -> extract -> transcribe -> translate -> chunk -> index -> ready;
+  extract -> fail [label="格式/时长/FFmpeg 失败"];
+  transcribe -> fail [label="模型/资源失败"];
+  translate -> fail [label="供应商失败；可降级跳过", style=dashed];
+  index -> fail [label="索引失败"];
+  ready -> ask -> answer;
+}

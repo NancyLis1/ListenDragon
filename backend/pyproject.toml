@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "listen-dragon"
+version = "0.1.0"
+description = "Local-first video transcription and retrieval-assisted QA backend"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+  "fastapi>=0.115,<1.0",
+  "uvicorn[standard]>=0.34,<1.0",
+  "pydantic-settings>=2.7,<3.0",
+  "python-multipart>=0.0.20,<1.0",
+  "httpx>=0.28,<1.0",
+]
+
+[project.optional-dependencies]
+ai = [
+  "faster-whisper>=1.1,<2.0",
+  "sentence-transformers>=3.3,<6.0",
+  "faiss-cpu>=1.9,<2.0",
+  "rank-bm25>=0.2.2,<1.0",
+]
+dev = [
+  "pytest>=8.3,<10.0",
+  "pytest-asyncio>=0.25,<2.0",
+  "ruff>=0.9,<1.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100

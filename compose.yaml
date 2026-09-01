@@ -1,0 +1,48 @@
+name: listen-dragon
+
+x-backend-common: &backend-common
+  build:
+    context: ./backend
+    args:
+      INSTALL_AI: "true"
+  env_file:
+    - path: .env
+      required: false
+  volumes:
+    - ./data:/data
+  restart: unless-stopped
+
+services:
+  api:
+    <<: *backend-common
+    command: ["uvicorn", "listen_dragon.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/live', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  worker:
+    <<: *backend-common
+    command: ["python", "-m", "listen_dragon.worker"]
+    depends_on:
+      api:
+        condition: service_healthy
+
+  frontend:
+    profiles: ["dev"]
+    image: node:22-alpine
+    working_dir: /app
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - ./frontend:/app
+    command: ["sh", "-c", "npm install && npm run dev -- --host 0.0.0.0"]
+    ports:
+      - "5173:5173"
+    depends_on:
+      api:
+        condition: service_healthy
