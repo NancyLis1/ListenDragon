@@ -1,0 +1,18 @@
+:root { color: #161b27; background: #fff; font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif; font-synthesis: none; text-rendering: optimizeLegibility; }
+* { box-sizing: border-box; }
+html, body, #root { min-width: 320px; min-height: 100%; margin: 0; }
+body { min-height: 100vh; }
+button, input, textarea { font: inherit; }
+button { border: 0; }
+button:not(:disabled) { cursor: pointer; }
+button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid rgba(43, 101, 229, .26); outline-offset: 2px; }
+.page-content { min-width: 0; min-height: 100vh; }
+.page-heading h1, .page-heading p, .upload-aside h2, .search-preview h1, .search-preview p, .chat-header h1 { margin: 0; }
+.page-heading h1 { font-size: 24px; letter-spacing: -.03em; }
+.page-heading p { margin-top: 8px; color: #788295; font-size: 15px; }
+.primary-button, .outline-button { min-height: 46px; border-radius: 8px; font-weight: 650; transition: transform .15s ease, box-shadow .15s ease, background .15s ease; }
+.primary-button { color: #fff; background: #2e63df; box-shadow: 0 5px 14px rgba(46, 99, 223, .2); }
+.primary-button:hover { background: #2157d2; transform: translateY(-1px); }
+.primary-button:disabled { cursor: wait; opacity: .65; }
+.outline-button { padding: 0 28px; color: #2464d8; border: 1px solid #aac8ff; background: #fff; }
+.outline-button:hover { background: #f6f9ff; }

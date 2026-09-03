@@ -1,0 +1,19 @@
+.video-artwork { position: relative; isolation: isolate; overflow: hidden; border-radius: 7px; background: #17212a; color: #19202d; }
+.artwork-screen { position: absolute; z-index: 1; top: 11%; right: 17%; bottom: 13%; left: 9%; display: flex; flex-direction: column; gap: 8%; padding: 8% 9%; overflow: hidden; background: linear-gradient(140deg, #fbfcff, #f0f4f8); box-shadow: 0 0 0 1px rgba(255,255,255,.4); font-family: Georgia, serif; }
+.artwork-screen strong { font-family: Inter, "PingFang SC", sans-serif; font-size: clamp(7px, 1.1vw, 18px); }
+.artwork-screen span { color: #555e6b; font-size: clamp(4px, .7vw, 11px); }
+.artwork-speaker { position: absolute; z-index: 2; right: 5%; bottom: 8%; width: 20%; height: 55%; }
+.speaker-head { position: absolute; top: 0; left: 26%; width: 45%; aspect-ratio: 1; border-radius: 50%; background: #d5a17f; }
+.speaker-body { position: absolute; right: 0; bottom: 0; left: 0; height: 72%; border-radius: 48% 48% 8% 8%; background: linear-gradient(90deg, #26313c, #0d151b); }
+.diagram { display: block; width: 78%; height: 2px; margin: auto; background: #3668ca; transform: rotate(-24deg); transform-origin: left; }
+.diagram::before, .diagram::after { display: block; width: 85%; height: 2px; margin-left: 20%; background: #8598b5; content: ""; transform: rotate(50deg); transform-origin: left; }
+.diagram::after { width: 68%; margin-left: 42%; transform: rotate(-70deg); }
+.diagram--attention { height: 38%; background: repeating-linear-gradient(90deg, #cfe0f8 0 12%, transparent 12% 16%); transform: none; }
+.diagram--attention::before, .diagram--attention::after { display: none; }
+.diagram--sequence { width: 92%; height: 5px; background: linear-gradient(90deg, #4a7ada 0 18%, #8eace5 18% 34%, #4a7ada 34% 55%, #8eace5 55% 70%, #4a7ada 70%); transform: none; }
+.diagram--science { width: 65%; height: 65%; border: 2px solid #425777; border-left-color: transparent; border-radius: 50%; background: transparent; transform: none; }
+.diagram--science::before, .diagram--science::after { position: absolute; width: 24%; margin: 0; background: #425777; content: ""; }
+.duration-badge { position: absolute; z-index: 4; right: 5px; bottom: 5px; padding: 2px 4px; border-radius: 3px; color: #fff; background: rgba(12, 16, 23, .78); font-size: 11px; font-weight: 700; }
+.artwork-play { position: absolute; z-index: 3; top: 50%; left: 50%; display: grid; width: 35px; height: 35px; place-items: center; border-radius: 50%; color: #fff; background: rgba(25, 33, 42, .55); opacity: 0; transform: translate(-50%, -50%); transition: opacity .15s ease; }
+.artwork-play svg { width: 19px; height: 19px; margin-left: 2px; }
+.video-artwork:hover .artwork-play { opacity: 1; }
