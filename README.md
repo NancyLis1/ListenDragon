@@ -18,7 +18,7 @@ GitHub Pages 只能托管静态前端。浏览器通过 `VITE_API_BASE_URL` 访�
 3. 前端访问 `http://localhost:5173/ListenDragon/`，API 文档访问 `http://localhost:8000/docs`。
 4. 运行 `powershell -ExecutionPolicy Bypass -File scripts/verify-env.ps1` 获取环境证据。
 
-当前后端已在 T03/T05 骨架上补齐 T07 的流式上传、隔离落盘、SHA-256 与 SQLite 任务持久化，并完成 T08 的租约领取、媒体时长校验和 16 kHz 单声道音频提取。Whisper、检索与问答服务保留清晰接口，由后续迭代实现。
+当前后端已在 T03/T05 骨架上完成 T07-T11：流式上传与 SQLite 任务持久化、租约领取、媒体校验和音频提取、faster-whisper 转写、带时间戳的文本分块，以及 FAISS/BM25 双索引原子发布。多查询融合与问答服务保留清晰接口，由后续迭代实现。
 
 完整 AI 镜像按 CPU/INT8 基线构建：Dockerfile 从 PyTorch 官方 CPU wheel 索引预装 `torch==2.6.0`，避免默认解析 CUDA 运行时。宿主机无需单独安装 FFmpeg，容器内已固化并验证 FFmpeg 7.1.5。
 

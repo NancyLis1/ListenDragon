@@ -9,6 +9,7 @@ from pathlib import Path
 from uuid import UUID, uuid4
 
 from listen_dragon.domain.models import JobState, VideoJobView
+from listen_dragon.services.contracts import DocumentChunk, TranscriptSegment
 
 
 @dataclass(frozen=True)
@@ -74,6 +75,36 @@ class SqliteJobRepository:
 
                 CREATE INDEX IF NOT EXISTS ix_processing_job_state
                     ON processing_job(state, updated_at);
+
+                CREATE TABLE IF NOT EXISTS transcript_segment (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    video_id TEXT NOT NULL REFERENCES video(id),
+                    seq INTEGER NOT NULL,
+                    start_ms INTEGER NOT NULL,
+                    end_ms INTEGER NOT NULL,
+                    language TEXT NOT NULL,
+                    text TEXT NOT NULL,
+                    translated_text TEXT,
+                    UNIQUE(video_id, seq),
+                    CHECK(start_ms >= 0 AND end_ms > start_ms)
+                );
+
+                CREATE TABLE IF NOT EXISTS document_chunk (
+                    id TEXT PRIMARY KEY,
+                    video_id TEXT NOT NULL REFERENCES video(id),
+                    start_ms INTEGER NOT NULL,
+                    end_ms INTEGER NOT NULL,
+                    text TEXT NOT NULL,
+                    token_count INTEGER NOT NULL,
+                    embedding_version TEXT NOT NULL DEFAULT '',
+                    index_version TEXT NOT NULL DEFAULT '',
+                    CHECK(start_ms >= 0 AND end_ms > start_ms)
+                );
+
+                CREATE INDEX IF NOT EXISTS ix_transcript_segment_video
+                    ON transcript_segment(video_id, seq);
+                CREATE INDEX IF NOT EXISTS ix_document_chunk_video
+                    ON document_chunk(video_id, start_ms);
                 """
             )
 
@@ -198,6 +229,46 @@ class SqliteJobRepository:
             )
         return self.get_stored_video(video_id)
 
+    def claim_stage(
+        self,
+        state: JobState,
+        *,
+        worker_id: str,
+        lease_seconds: int,
+    ) -> StoredVideo | None:
+        if state not in {JobState.transcribing, JobState.chunking, JobState.indexing}:
+            raise ValueError(f"Unsupported claimable stage: {state}")
+        now = datetime.now(UTC)
+        now_text = now.isoformat()
+        lease_until = (now + timedelta(seconds=lease_seconds)).isoformat()
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                """
+                SELECT v.id
+                FROM video AS v
+                JOIN processing_job AS j ON j.video_id = v.id
+                WHERE v.deleted_at IS NULL
+                  AND j.state = ?
+                  AND (j.lease_until IS NULL OR j.lease_until < ?)
+                ORDER BY j.updated_at
+                LIMIT 1
+                """,
+                (state.value, now_text),
+            ).fetchone()
+            if row is None:
+                return None
+            video_id = UUID(row["id"])
+            connection.execute(
+                """
+                UPDATE processing_job
+                SET lease_owner = ?, lease_until = ?, attempt = attempt + 1, updated_at = ?
+                WHERE video_id = ?
+                """,
+                (worker_id, lease_until, now_text, str(video_id)),
+            )
+        return self.get_stored_video(video_id)
+
     def update_job(
         self,
         video_id: UUID,
@@ -223,6 +294,116 @@ class SqliteJobRepository:
             connection.execute(
                 "UPDATE video SET status = ? WHERE id = ?",
                 (state.value, str(video_id)),
+            )
+
+    def replace_transcript_segments(
+        self,
+        video_id: UUID,
+        segments: list[TranscriptSegment],
+    ) -> None:
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            connection.execute(
+                "DELETE FROM transcript_segment WHERE video_id = ?",
+                (str(video_id),),
+            )
+            connection.executemany(
+                """
+                INSERT INTO transcript_segment (
+                    video_id, seq, start_ms, end_ms, language, text
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                [
+                    (
+                        str(video_id),
+                        seq,
+                        segment.start_ms,
+                        segment.end_ms,
+                        segment.language,
+                        segment.text,
+                    )
+                    for seq, segment in enumerate(segments)
+                ],
+            )
+
+    def list_transcript_segments(self, video_id: UUID) -> list[TranscriptSegment]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT start_ms, end_ms, text, language
+                FROM transcript_segment
+                WHERE video_id = ?
+                ORDER BY seq
+                """,
+                (str(video_id),),
+            ).fetchall()
+        return [
+            TranscriptSegment(
+                start_ms=row["start_ms"],
+                end_ms=row["end_ms"],
+                text=row["text"],
+                language=row["language"],
+            )
+            for row in rows
+        ]
+
+    def replace_chunks(self, video_id: UUID, chunks: list[DocumentChunk]) -> None:
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            connection.execute(
+                "DELETE FROM document_chunk WHERE video_id = ?",
+                (str(video_id),),
+            )
+            connection.executemany(
+                """
+                INSERT INTO document_chunk (
+                    id, video_id, start_ms, end_ms, text, token_count
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                [
+                    (
+                        chunk.chunk_id,
+                        str(video_id),
+                        chunk.start_ms,
+                        chunk.end_ms,
+                        chunk.text,
+                        chunk.token_count,
+                    )
+                    for chunk in chunks
+                ],
+            )
+
+    def list_chunks(self, video_id: UUID) -> list[DocumentChunk]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT id, start_ms, end_ms, text, token_count
+                FROM document_chunk
+                WHERE video_id = ?
+                ORDER BY start_ms, id
+                """,
+                (str(video_id),),
+            ).fetchall()
+        return [
+            DocumentChunk(
+                chunk_id=row["id"],
+                start_ms=row["start_ms"],
+                end_ms=row["end_ms"],
+                text=row["text"],
+                token_count=row["token_count"],
+            )
+            for row in rows
+        ]
+
+    def set_chunk_index_version(self, video_id: UUID, index_version: str) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                UPDATE document_chunk
+                SET index_version = ?
+                WHERE video_id = ?
+                """,
+                (index_version, str(video_id)),
             )
 
     def get_stored_video(self, video_id: UUID) -> StoredVideo | None:
