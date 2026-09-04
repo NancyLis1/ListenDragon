@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     max_video_minutes: int = 60
     worker_poll_seconds: float = 2.0
     worker_concurrency: int = 1
+    worker_lease_seconds: int = 30 * 60
+    ffmpeg_binary: str = "ffmpeg"
+    ffprobe_binary: str = "ffprobe"
     cors_origins: str = "http://localhost:5173"
     asr_model: str = "base"
     asr_device: str = "cpu"
