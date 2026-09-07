@@ -8,29 +8,39 @@ export const processingSteps: ProcessingStep[] = [
   { id: "summary", title: "摘要待生成", description: "正在生成课程要点", state: "pending", detail: "等待中" },
 ];
 
-const ropeTranscript: TranscriptSegment[] = [
-  { id: "rope-1", startMs: 1_920_000, endMs: 1_934_000, content: "在比较位置编码之前，我们先回顾注意力机制为什么需要知道词元在序列中的位置。" },
-  { id: "rope-2", startMs: 1_934_000, endMs: 1_953_000, content: "正弦位置编码把不同频率的正弦和余弦值加到输入表示上，提供绝对位置信息。" },
-  { id: "rope-3", startMs: 1_953_000, endMs: 1_976_000, content: "RoPE 则根据位置相关角度旋转查询和键，让它们的点积自然携带相对位置关系。" },
-  { id: "rope-4", startMs: 1_976_000, endMs: 2_004_000, content: "这种旋转保持向量范数，并让注意力分数只依赖词元之间的相对距离。" },
-  { id: "rope-5", startMs: 2_004_000, endMs: 2_032_000, content: "实践中 RoPE 往往有更好的长度外推能力，但仍需结合训练长度和缩放策略判断。" },
+const transcriptContent = [
+  "在比较位置编码之前，我们先回顾注意力机制为什么需要知道词元在序列中的位置。",
+  "正弦位置编码把不同频率的正弦和余弦值加到输入表示上，提供绝对位置信息。",
+  "RoPE 则根据位置相关角度旋转查询和键，让它们的点积自然携带相对位置关系。",
+  "这种旋转保持向量范数，并让注意力分数只依赖词元之间的相对距离。",
+  "实践中 RoPE 往往有更好的长度外推能力，但仍需结合训练长度和缩放策略判断。",
 ];
 
-const qaRules = [
+const makeTranscript = (lectureId: string, focusMs: number): TranscriptSegment[] => {
+  const starts = [focusMs - 14_000, focusMs, focusMs + 19_000, focusMs + 42_000, focusMs + 70_000];
+  return starts.map((startMs, index) => ({
+    id: `${lectureId}-transcript-${index + 1}`,
+    startMs,
+    endMs: starts[index + 1] ?? startMs + 28_000,
+    content: transcriptContent[index],
+  }));
+};
+
+const makeQaRules = (focusMs: number) => [
   {
     keywords: ["rope", "旋转", "相对位置"],
     answer: "RoPE 会按位置相关的角度旋转查询和键，使注意力点积直接编码两个词元的相对距离，同时保持向量范数。",
-    citationMs: 1_953_000,
+    citationMs: focusMs + 19_000,
   },
   {
     keywords: ["正弦", "区别", "差异"],
     answer: "正弦位置编码向输入加入绝对位置向量；RoPE 把位置信息作用在查询和键的旋转上，因此更自然地表达相对位置。",
-    citationMs: 1_934_000,
+    citationMs: focusMs,
   },
   {
     keywords: ["外推", "长序列", "长度"],
     answer: "课程指出 RoPE 通常更利于长度外推，不过效果仍受训练上下文长度和推理时缩放方法影响。",
-    citationMs: 2_004_000,
+    citationMs: focusMs + 70_000,
   },
 ];
 
@@ -38,7 +48,7 @@ const makeLecture = (
   lecture: Omit<LectureDetail, "transcript" | "summary" | "qaRules">,
 ): LectureDetail => ({
   ...lecture,
-  transcript: ropeTranscript,
+  transcript: makeTranscript(lecture.id, lecture.timestampMs),
   summary: {
     overview: "本节比较正弦位置编码与旋转位置编码（RoPE），重点解释两者注入位置信息的方式，以及 RoPE 对相对位置建模和长序列外推的影响。",
     keyPoints: [
@@ -47,13 +57,13 @@ const makeLecture = (
       "RoPE 保持向量范数，但长度外推仍受训练范围和缩放策略影响。",
     ],
     chapters: [
-      { id: `${lecture.id}-summary-1`, title: "为什么注意力需要位置", description: "回顾注意力机制缺少顺序信息的原因。", startMs: 1_920_000 },
-      { id: `${lecture.id}-summary-2`, title: "正弦位置编码", description: "通过不同频率的正弦和余弦表示绝对位置。", startMs: 1_934_000 },
-      { id: `${lecture.id}-summary-3`, title: "RoPE 的旋转机制", description: "把相对位置关系编码到查询和键的点积中。", startMs: 1_953_000 },
-      { id: `${lecture.id}-summary-4`, title: "长度外推与限制", description: "理解 RoPE 的优势及实际使用边界。", startMs: 2_004_000 },
+      { id: `${lecture.id}-summary-1`, title: "为什么注意力需要位置", description: "回顾注意力机制缺少顺序信息的原因。", startMs: lecture.timestampMs - 14_000 },
+      { id: `${lecture.id}-summary-2`, title: "正弦位置编码", description: "通过不同频率的正弦和余弦表示绝对位置。", startMs: lecture.timestampMs },
+      { id: `${lecture.id}-summary-3`, title: "RoPE 的旋转机制", description: "把相对位置关系编码到查询和键的点积中。", startMs: lecture.timestampMs + 19_000 },
+      { id: `${lecture.id}-summary-4`, title: "长度外推与限制", description: "理解 RoPE 的优势及实际使用边界。", startMs: lecture.timestampMs + 70_000 },
     ],
   },
-  qaRules,
+  qaRules: makeQaRules(lecture.timestampMs),
 });
 
 export const lectures: LectureDetail[] = [
@@ -113,5 +123,5 @@ export const lectures: LectureDetail[] = [
 
 export const initialChat: ChatMessage[] = [
   { id: "q1", role: "user", content: "RoPE 和正弦位置编码有什么区别？", time: "14:14" },
-  { id: "a1", role: "assistant", content: qaRules[1].answer, time: "14:14", citationMs: qaRules[1].citationMs },
+  { id: "a1", role: "assistant", content: lectures[0].qaRules[1].answer, time: "14:14", citationMs: lectures[0].qaRules[1].citationMs },
 ];

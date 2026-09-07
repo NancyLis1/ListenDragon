@@ -58,6 +58,13 @@ export interface LectureDetail extends Lecture {
   isDemoUpload?: boolean;
 }
 
+export interface LectureSearchResult {
+  lecture: LectureDetail;
+  timestampMs: number;
+  timeRange: string;
+  preview: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";

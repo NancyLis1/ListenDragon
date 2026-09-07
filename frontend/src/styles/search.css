@@ -17,6 +17,10 @@
 .result-copy em, .search-preview > strong { color: #2867e2; font-style: normal; font-size: 14px; font-weight: 650; }
 .result-copy > span { display: -webkit-box; overflow: hidden; color: #596474; font-size: 14px; line-height: 1.55; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 .result-footer { margin: 18px 12px; color: #778091; font-size: 14px; }
+.search-empty { display: grid; justify-items: center; padding: 80px 20px; color: #8b95a4; text-align: center; }
+.search-empty svg { width: 36px; height: 36px; }
+.search-empty h2 { margin: 18px 0 7px; color: #4c5665; font-size: 17px; }
+.search-empty p { margin: 0; font-size: 14px; }
 .search-preview { align-self: start; min-height: calc(100vh - 142px); margin-top: 90px; padding: 33px 28px; border-left: 1px solid #e2e6ec; }
 .preview-artwork { width: 100%; aspect-ratio: 1.66; }
 .search-preview h1 { margin-top: 28px; font-size: 18px; line-height: 1.45; }
@@ -25,6 +29,8 @@
 .preview-text { margin-top: 24px; color: #697383; font-size: 15px; line-height: 1.72; }
 .play-from-here { display: flex; width: 100%; align-items: center; justify-content: center; gap: 10px; margin-top: 27px; }
 .play-from-here svg { width: 20px; fill: currentColor; }
+.search-preview.is-empty { display: grid; place-items: center; }
+.preview-placeholder { max-width: 260px; color: #8b95a4; line-height: 1.7; text-align: center; }
 @media (max-width: 1050px) { .search-page { grid-template-columns: minmax(0, 1fr) 340px; padding: 24px; gap: 20px; } .search-result { grid-template-columns: 184px minmax(0, 1fr); gap: 18px; } .result-artwork { width: 184px; height: 110px; } .search-preview { padding-right: 0; } }
 @media (max-width: 820px) { .search-page { display: block; padding: 24px 20px; } .search-preview { display: none; } .search-result { grid-template-columns: 145px minmax(0, 1fr); gap: 14px; } .result-artwork { width: 145px; height: 88px; } .result-copy { gap: 4px; padding-top: 0; } .result-copy > span { -webkit-line-clamp: 2; } }
 @media (max-width: 480px) { .search-input { min-height: 54px; padding: 0 13px; } .search-input input { font-size: 14px; } .search-result { grid-template-columns: 108px minmax(0, 1fr); padding: 14px 6px; } .result-artwork { width: 108px; height: 67px; } .result-copy strong { font-size: 14px; } .result-copy small, .result-copy em, .result-copy > span { font-size: 12px; } }

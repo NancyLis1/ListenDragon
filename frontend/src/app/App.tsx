@@ -15,10 +15,11 @@ const viewFromHash = (): AppView => {
 
 export default function App() {
   const [currentView, setCurrentView] = useState<AppView>(viewFromHash);
-  const [activeLectureId] = useState(lectures[0].id);
-  const [readerStartMs] = useState(lectures[0].timestampMs);
+  const [courseLibrary] = useState(lectures);
+  const [activeLectureId, setActiveLectureId] = useState(lectures[0].id);
+  const [readerStartMs, setReaderStartMs] = useState(lectures[0].timestampMs);
   const backend = useBackendStatus();
-  const activeLecture = lectures.find((lecture) => lecture.id === activeLectureId) ?? lectures[0];
+  const activeLecture = courseLibrary.find((lecture) => lecture.id === activeLectureId) ?? courseLibrary[0];
 
   useEffect(() => {
     const syncView = () => setCurrentView(viewFromHash());
@@ -30,11 +31,17 @@ export default function App() {
     window.location.hash = view;
   };
 
+  const openLecture = (lectureId: string, timeMs: number) => {
+    setActiveLectureId(lectureId);
+    setReaderStartMs(timeMs);
+    navigate("reader");
+  };
+
   return (
     <div className="application-shell">
       <AppSidebar currentView={currentView} onNavigate={navigate} />
       {currentView === "upload" && <UploadPage backend={backend} />}
-      {currentView === "search" && <SearchPage onOpenLecture={() => navigate("reader")} />}
+      {currentView === "search" && <SearchPage lectures={courseLibrary} onOpenLecture={openLecture} />}
       {currentView === "reader" && <ReaderPage lecture={activeLecture} initialTimeMs={readerStartMs} />}
     </div>
   );

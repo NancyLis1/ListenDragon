@@ -1,21 +1,22 @@
 import { VideoArtwork } from "../../components/VideoArtwork";
-import type { Lecture } from "../../types/lecture";
+import type { LectureSearchResult } from "../../types/lecture";
 
 interface SearchResultCardProps {
-  lecture: Lecture;
+  result: LectureSearchResult;
   selected: boolean;
-  onSelect: (lecture: Lecture) => void;
+  onSelect: () => void;
 }
 
-export function SearchResultCard({ lecture, selected, onSelect }: SearchResultCardProps) {
+export function SearchResultCard({ result, selected, onSelect }: SearchResultCardProps) {
+  const { lecture } = result;
   return (
-    <button className={`search-result ${selected ? "is-selected" : ""}`} type="button" onClick={() => onSelect(lecture)}>
+    <button className={`search-result ${selected ? "is-selected" : ""}`} type="button" onClick={onSelect}>
       <VideoArtwork visual={lecture.visual} duration={lecture.duration} className="result-artwork" />
       <span className="result-copy">
         <strong>{lecture.title}</strong>
         <small>{lecture.source} · {lecture.year}</small>
-        <em>{lecture.timeRange}</em>
-        <span>… {lecture.preview}</span>
+        <em>{result.timeRange}</em>
+        <span>… {result.preview}</span>
       </span>
     </button>
   );
