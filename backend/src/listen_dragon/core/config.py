@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -29,6 +30,10 @@ class Settings(BaseSettings):
     llm_base_url: str | None = None
     llm_api_key: str | None = None
     llm_model: str | None = None
+    retrieval_top_k: int = Field(default=8, ge=1, le=100)
+    retrieval_rrf_k: int = Field(default=60, ge=1)
+    query_expansion_enabled: bool = True
+    query_expansion_timeout_seconds: float = Field(default=8.0, gt=0, le=60)
 
     @property
     def cors_origin_list(self) -> list[str]:
