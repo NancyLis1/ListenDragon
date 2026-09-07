@@ -1,21 +1,127 @@
-import { useState } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 
 import { Icon } from "../../components/Icon";
 import { VideoArtwork } from "../../components/VideoArtwork";
+import type { LectureDetail, SeekRequest } from "../../types/lecture";
 
-export function LectureVideo() {
+interface LectureVideoProps {
+  lecture: LectureDetail;
+  seekRequest: SeekRequest;
+  onTimeChange: (timeMs: number) => void;
+}
+
+export function formatTimestamp(timeMs: number) {
+  const totalSeconds = Math.max(0, Math.floor(timeMs / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return hours > 0
+    ? `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+    : `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+export function LectureVideo({ lecture, seekRequest, onTimeChange }: LectureVideoProps) {
+  const playerRef = useRef<HTMLElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTimeMs, setCurrentTimeMs] = useState(seekRequest.timeMs);
+  const [playbackRate, setPlaybackRate] = useState(1);
+
+  const updateTime = (timeMs: number) => {
+    const boundedTime = Math.max(0, Math.min(timeMs, lecture.durationMs));
+    setCurrentTimeMs(boundedTime);
+    onTimeChange(boundedTime);
+  };
+
+  useEffect(() => {
+    updateTime(seekRequest.timeMs);
+    if (videoRef.current) videoRef.current.currentTime = seekRequest.timeMs / 1000;
+  }, [seekRequest.token]);
+
+  useEffect(() => {
+    if (lecture.videoUrl || !isPlaying) return;
+    const timer = window.setInterval(() => {
+      setCurrentTimeMs((current) => {
+        const next = Math.min(current + 1000, lecture.durationMs);
+        onTimeChange(next);
+        if (next >= lecture.durationMs) setIsPlaying(false);
+        return next;
+      });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [isPlaying, lecture.durationMs, lecture.videoUrl, onTimeChange]);
+
+  const togglePlayback = async () => {
+    if (!videoRef.current) {
+      setIsPlaying((value) => !value);
+      return;
+    }
+    if (videoRef.current.paused) {
+      try {
+        await videoRef.current.play();
+        setIsPlaying(true);
+      } catch {
+        setIsPlaying(false);
+      }
+    } else {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  const changeProgress = (event: ChangeEvent<HTMLInputElement>) => {
+    const next = Number(event.target.value) * 1000;
+    updateTime(next);
+    if (videoRef.current) videoRef.current.currentTime = next / 1000;
+  };
+
+  const cyclePlaybackRate = () => {
+    const rates = [1, 1.25, 1.5, 2];
+    const next = rates[(rates.indexOf(playbackRate) + 1) % rates.length];
+    setPlaybackRate(next);
+    if (videoRef.current) videoRef.current.playbackRate = next;
+  };
+
+  const enterFullscreen = () => {
+    void playerRef.current?.requestFullscreen?.();
+  };
+
+  const progress = lecture.durationMs ? Math.min(100, (currentTimeMs / lecture.durationMs) * 100) : 0;
 
   return (
-    <section className="lecture-player" aria-label="课程播放器">
-      <VideoArtwork visual="science" className="lecture-artwork" />
+    <section ref={playerRef} className="lecture-player" aria-label="课程播放器">
+      {lecture.videoUrl ? (
+        <video
+          ref={videoRef}
+          className="lecture-video"
+          src={lecture.videoUrl}
+          onTimeUpdate={(event) => updateTime(event.currentTarget.currentTime * 1000)}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          onEnded={() => setIsPlaying(false)}
+          playsInline
+        />
+      ) : (
+        <VideoArtwork visual={lecture.visual} className="lecture-artwork" />
+      )}
       <div className="player-controls">
-        <button type="button" onClick={() => setIsPlaying((value) => !value)} aria-label={isPlaying ? "暂停" : "播放"}><Icon name="play" /></button>
-        <span>12:47 / 1:02:18</span>
-        <label className="progress-control" aria-label="播放进度"><input type="range" min="0" max="100" value="24" readOnly /></label>
-        <span>1×</span>
-        <button type="button" aria-label="字幕"><Icon name="captions" /></button>
-        <button type="button" aria-label="全屏"><Icon name="expand" /></button>
+        <button type="button" onClick={() => void togglePlayback()} aria-label={isPlaying ? "暂停" : "播放"}>
+          <Icon name={isPlaying ? "pause" : "play"} />
+        </button>
+        <span>{formatTimestamp(currentTimeMs)} / {formatTimestamp(lecture.durationMs)}</span>
+        <label className="progress-control" aria-label="播放进度">
+          <input
+            type="range"
+            min="0"
+            max={Math.max(1, Math.round(lecture.durationMs / 1000))}
+            value={Math.round(currentTimeMs / 1000)}
+            onChange={changeProgress}
+            style={{ background: `linear-gradient(90deg, #3478f2 0 ${progress}%, #8a9298 ${progress}% 100%)` }}
+          />
+        </label>
+        <button type="button" className="playback-rate" onClick={cyclePlaybackRate} aria-label="切换播放速度">{playbackRate}×</button>
+        <button type="button" aria-label="字幕不可用" disabled title="演示模式暂不提供字幕轨道"><Icon name="captions" /></button>
+        <button type="button" onClick={enterFullscreen} aria-label="全屏"><Icon name="expand" /></button>
       </div>
     </section>
   );

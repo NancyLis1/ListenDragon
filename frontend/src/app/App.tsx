@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { AppSidebar } from "../components/AppSidebar";
+import { lectures } from "../data/mockLectures";
 import { ReaderPage } from "../features/reader/ReaderPage";
 import { SearchPage } from "../features/search/SearchPage";
 import { UploadPage } from "../features/upload/UploadPage";
@@ -14,7 +15,10 @@ const viewFromHash = (): AppView => {
 
 export default function App() {
   const [currentView, setCurrentView] = useState<AppView>(viewFromHash);
+  const [activeLectureId] = useState(lectures[0].id);
+  const [readerStartMs] = useState(lectures[0].timestampMs);
   const backend = useBackendStatus();
+  const activeLecture = lectures.find((lecture) => lecture.id === activeLectureId) ?? lectures[0];
 
   useEffect(() => {
     const syncView = () => setCurrentView(viewFromHash());
@@ -31,7 +35,7 @@ export default function App() {
       <AppSidebar currentView={currentView} onNavigate={navigate} />
       {currentView === "upload" && <UploadPage backend={backend} />}
       {currentView === "search" && <SearchPage onOpenLecture={() => navigate("reader")} />}
-      {currentView === "reader" && <ReaderPage />}
+      {currentView === "reader" && <ReaderPage lecture={activeLecture} initialTimeMs={readerStartMs} />}
     </div>
   );
 }

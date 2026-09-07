@@ -1,6 +1,6 @@
 import type { ReactNode, SVGProps } from "react";
 
-export type IconName = "upload" | "search" | "file" | "bookmark" | "settings" | "clock" | "play" | "send" | "close" | "check" | "note" | "list" | "expand" | "captions" | "sparkles" | "info";
+export type IconName = "upload" | "search" | "file" | "bookmark" | "settings" | "clock" | "play" | "pause" | "send" | "close" | "check" | "note" | "list" | "expand" | "captions" | "sparkles" | "info";
 
 interface IconProps extends SVGProps<SVGSVGElement> {
   name: IconName;
@@ -14,6 +14,7 @@ const iconPaths: Record<IconName, ReactNode> = {
   settings: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.06.06-2.62 2.62-.06-.06a1.8 1.8 0 0 0-1.98-.36 1.8 1.8 0 0 0-1.1 1.65V21h-3.7v-.1A1.8 1.8 0 0 0 9.3 19.25a1.8 1.8 0 0 0-1.98.36l-.06.06-2.62-2.62.06-.06A1.8 1.8 0 0 0 5.06 15a1.8 1.8 0 0 0-1.66-1.1H3.3v-3.7h.1A1.8 1.8 0 0 0 5.05 9.1a1.8 1.8 0 0 0-.36-1.98l-.06-.06 2.62-2.62.06.06a1.8 1.8 0 0 0 1.98.36 1.8 1.8 0 0 0 1.1-1.65V3.1h3.7v.1a1.8 1.8 0 0 0 1.1 1.65 1.8 1.8 0 0 0 1.98-.36l.06-.06 2.62 2.62-.06.06a1.8 1.8 0 0 0-.36 1.98 1.8 1.8 0 0 0 1.65 1.1h.1v3.7h-.1A1.8 1.8 0 0 0 19.4 15Z" /></>,
   clock: <><circle cx="12" cy="12" r="8.5" /><path d="M12 7v5l3.2 2" /></>,
   play: <path d="m9 6 8 6-8 6V6Z" fill="currentColor" stroke="none" />,
+  pause: <><path d="M8 6v12M16 6v12" strokeWidth="2.5" /></>,
   send: <><path d="m21 3-8.5 18-2.6-7.9L3 10.5 21 3Z" /><path d="m9.9 13.1 4.7-4.7" /></>,
   close: <path d="m6 6 12 12M18 6 6 18" />,
   check: <path d="m5 12 4.3 4.3L19.5 6" />,
