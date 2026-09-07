@@ -35,8 +35,26 @@ const qaRules = [
 ];
 
 const makeLecture = (
-  lecture: Omit<LectureDetail, "transcript" | "qaRules">,
-): LectureDetail => ({ ...lecture, transcript: ropeTranscript, qaRules });
+  lecture: Omit<LectureDetail, "transcript" | "summary" | "qaRules">,
+): LectureDetail => ({
+  ...lecture,
+  transcript: ropeTranscript,
+  summary: {
+    overview: "本节比较正弦位置编码与旋转位置编码（RoPE），重点解释两者注入位置信息的方式，以及 RoPE 对相对位置建模和长序列外推的影响。",
+    keyPoints: [
+      "正弦位置编码将绝对位置向量直接加入词元表示。",
+      "RoPE 旋转查询与键，使注意力分数自然包含相对距离。",
+      "RoPE 保持向量范数，但长度外推仍受训练范围和缩放策略影响。",
+    ],
+    chapters: [
+      { id: `${lecture.id}-summary-1`, title: "为什么注意力需要位置", description: "回顾注意力机制缺少顺序信息的原因。", startMs: 1_920_000 },
+      { id: `${lecture.id}-summary-2`, title: "正弦位置编码", description: "通过不同频率的正弦和余弦表示绝对位置。", startMs: 1_934_000 },
+      { id: `${lecture.id}-summary-3`, title: "RoPE 的旋转机制", description: "把相对位置关系编码到查询和键的点积中。", startMs: 1_953_000 },
+      { id: `${lecture.id}-summary-4`, title: "长度外推与限制", description: "理解 RoPE 的优势及实际使用边界。", startMs: 2_004_000 },
+    ],
+  },
+  qaRules,
+});
 
 export const lectures: LectureDetail[] = [
   makeLecture({

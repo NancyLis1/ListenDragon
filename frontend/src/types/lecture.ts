@@ -23,6 +23,19 @@ export interface DemoQaRule {
   citationMs: number;
 }
 
+export interface SummaryChapter {
+  id: string;
+  title: string;
+  description: string;
+  startMs: number;
+}
+
+export interface LectureSummary {
+  overview: string;
+  keyPoints: string[];
+  chapters: SummaryChapter[];
+}
+
 export interface Lecture {
   id: string;
   title: string;
@@ -39,6 +52,7 @@ export interface Lecture {
 
 export interface LectureDetail extends Lecture {
   transcript: TranscriptSegment[];
+  summary: LectureSummary;
   qaRules: DemoQaRule[];
   videoUrl?: string;
   isDemoUpload?: boolean;

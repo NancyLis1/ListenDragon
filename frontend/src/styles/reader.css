@@ -19,6 +19,10 @@
 .player-controls input::-webkit-slider-thumb { width: 13px; height: 13px; appearance: none; border-radius: 50%; background: #fff; }
 .player-controls button:disabled { cursor: not-allowed; opacity: .4; }
 .player-controls .playback-rate { width: auto; min-width: 30px; font-size: 13px; }
+.reader-tabs { display: flex; gap: 28px; margin-top: 23px; border-bottom: 1px solid #e1e6ed; }
+.reader-tabs button { position: relative; padding: 0 3px 12px; color: #7b8593; background: transparent; font-size: 15px; font-weight: 650; }
+.reader-tabs button[aria-selected="true"] { color: #2464df; }
+.reader-tabs button[aria-selected="true"]::after { position: absolute; right: 0; bottom: -1px; left: 0; height: 2px; border-radius: 2px; background: #3478f2; content: ""; }
 .transcript-panel { padding-top: 21px; }
 .transcript-line { display: grid; grid-template-columns: 58px minmax(0, 1fr); width: 100%; gap: 18px; padding: 12px 16px 12px 39px; border-left: 2px solid transparent; color: #202127; background: transparent; text-align: left; }
 .transcript-line time { color: #848c99; font-size: 15px; }
@@ -34,6 +38,21 @@
 .inline-note button svg { width: 18px; }
 .inline-note p { margin: 8px 0 0; font-family: Georgia, "Songti SC", serif; font-size: 16px; }
 .inline-note textarea { width: 100%; min-height: 64px; margin-top: 8px; padding: 7px; border: 1px solid #e8d9b0; border-radius: 4px; background: rgba(255,255,255,.62); resize: vertical; }
+.summary-panel { display: grid; gap: 30px; padding: 28px 4px 20px; }
+.summary-overview { padding: 22px 24px; border: 1px solid #dce6f7; border-radius: 12px; background: linear-gradient(135deg, #f7faff, #eef5ff); }
+.summary-overview span { color: #2866dc; font-size: 13px; font-weight: 750; letter-spacing: .06em; }
+.summary-overview p { margin: 12px 0 0; color: #3d4859; font-family: Georgia, "Songti SC", serif; font-size: 18px; line-height: 1.75; }
+.summary-section h2 { margin: 0 0 15px; font-size: 17px; }
+.summary-section ul { display: grid; gap: 11px; margin: 0; padding-left: 23px; color: #455164; line-height: 1.65; }
+.summary-section li::marker { color: #3478f2; font-weight: 750; }
+.summary-chapters { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.summary-chapters button { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; width: 100%; gap: 13px; align-items: center; padding: 15px 16px; border: 1px solid #e1e6ed; border-radius: 10px; color: inherit; background: #fff; text-align: left; }
+.summary-chapters button:hover { border-color: #b9cff5; background: #f8fbff; }
+.chapter-index { color: #9aa5b4; font-size: 13px; font-weight: 750; }
+.chapter-copy { display: grid; gap: 5px; }
+.chapter-copy strong { font-size: 15px; }
+.chapter-copy small { color: #7b8594; font-size: 13px; line-height: 1.45; }
+.summary-chapters time { color: #2866dc; font-size: 13px; font-weight: 700; }
 .chat-panel { display: flex; flex-direction: column; min-height: 100vh; padding: 37px 24px 30px; border-left: 1px solid #e2e5eb; background: #fff; }
 .chat-header { display: flex; align-items: center; justify-content: space-between; padding: 0 2px 27px; }
 .chat-header h1 { font-size: 19px; }
@@ -54,4 +73,4 @@
 .chat-composer button svg { width: 21px; }
 @media (max-width: 1120px) { .reader-page { grid-template-columns: minmax(0, 1fr) 350px; } .reader-main { padding: 28px 36px; } .transcript-line { padding-left: 15px; } .inline-note { margin-left: 75px; } }
 @media (max-width: 870px) { .reader-page { display: block; } .reader-main { padding: 24px 20px 36px; } .chat-panel { min-height: 0; border-top: 1px solid #e2e5eb; border-left: 0; } .chat-messages { max-height: 420px; } }
-@media (max-width: 570px) { .lecture-artwork { aspect-ratio: 1.55; } .lecture-artwork .artwork-screen { left: 39%; } .player-controls { grid-template-columns: 22px auto minmax(30px, 1fr) 22px; gap: 8px; padding: 0 12px; font-size: 12px; } .player-controls button:nth-last-child(-n + 2) { display: none; } .transcript-line { grid-template-columns: 48px minmax(0, 1fr); gap: 9px; padding: 10px 8px; } .transcript-line span { font-size: 16px; } .inline-note { margin: 12px 8px 12px 58px; } }
+@media (max-width: 570px) { .lecture-artwork { aspect-ratio: 1.55; } .lecture-artwork .artwork-screen { left: 39%; } .player-controls { grid-template-columns: 22px auto minmax(30px, 1fr) 22px; gap: 8px; padding: 0 12px; font-size: 12px; } .player-controls button:nth-last-child(-n + 2) { display: none; } .transcript-line { grid-template-columns: 48px minmax(0, 1fr); gap: 9px; padding: 10px 8px; } .transcript-line span { font-size: 16px; } .inline-note { margin: 12px 8px 12px 58px; } .summary-overview { padding: 18px; } .summary-overview p { font-size: 16px; } .summary-chapters button { grid-template-columns: 30px minmax(0, 1fr); padding: 13px 11px; } .summary-chapters time { grid-column: 2; } }

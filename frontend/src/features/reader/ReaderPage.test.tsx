@@ -31,4 +31,15 @@ describe("ReaderPage", () => {
     expect(screen.getByText(/按位置相关的角度旋转/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "跳到 32:33" })).toBeTruthy();
   });
+
+  it("opens a summary chapter in the transcript", () => {
+    render(<ReaderPage lecture={lectures[0]} />);
+    fireEvent.click(screen.getByRole("tab", { name: "摘要" }));
+
+    expect(screen.getByText("关键要点")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "播放章节 RoPE 的旋转机制" }));
+
+    expect(screen.getByRole("tab", { name: "转写" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("slider", { name: "播放进度" }).getAttribute("value")).toBe("1953");
+  });
 });
