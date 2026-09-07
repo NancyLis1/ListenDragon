@@ -1,0 +1,22 @@
+[
+  {"id":"Q01","source":"user_gold","query":"什么是课题分离？","answer_start_ms":195380,"answer_end_ms":200500},
+  {"id":"Q02","source":"user_gold","query":"如何有接纳别人的勇气？","answer_start_ms":148620,"answer_end_ms":177580},
+  {"id":"Q03","source":"assistant_development","query":"决定我们自身的是过去经历还是赋予经历的意义？","answer_start_ms":51100,"answer_end_ms":56060},
+  {"id":"Q04","source":"assistant_development","query":"视频中的目的论怎么解释痛苦？","answer_start_ms":27700,"answer_end_ms":36500},
+  {"id":"Q05","source":"assistant_development","query":"为什么有人用痛苦让伤害他的人愧疚？","answer_start_ms":36500,"answer_end_ms":43900},
+  {"id":"Q06","source":"assistant_development","query":"第一种勇气是什么？","answer_start_ms":10940,"answer_end_ms":13740},
+  {"id":"Q07","source":"assistant_development","query":"健全的自卑感应该和谁比较？","answer_start_ms":111140,"answer_end_ms":116500},
+  {"id":"Q08","source":"assistant_development","query":"小明身高的例子说明了什么自卑心理？","answer_start_ms":89820,"answer_end_ms":101660},
+  {"id":"Q09","source":"assistant_development","query":"将不幸当做武器的人为什么一直需要不幸？","answer_start_ms":101660,"answer_end_ms":111140},
+  {"id":"Q10","source":"assistant_development","query":"不能改变客观事实时可以改变什么？","answer_start_ms":133060,"answer_end_ms":137460},
+  {"id":"Q11","source":"assistant_development","query":"人际关系中竞争为什么带来自卑？","answer_start_ms":142620,"answer_end_ms":148620},
+  {"id":"Q12","source":"assistant_development","query":"不再执着胜负后怎么真心祝福别人？","answer_start_ms":154420,"answer_end_ms":167580},
+  {"id":"Q13","source":"assistant_development","query":"怎样才能不把世界看成危险的地方？","answer_start_ms":167580,"answer_end_ms":177580},
+  {"id":"Q14","source":"assistant_development","query":"自由为什么是不再寻求别人的认可？","answer_start_ms":177580,"answer_end_ms":188580},
+  {"id":"Q15","source":"assistant_development","query":"我信任朋友和朋友回应信任分别是谁的课题？","answer_start_ms":200500,"answer_end_ms":206940},
+  {"id":"Q16","source":"assistant_development","query":"为什么不应该干涉别人的课题？","answer_start_ms":217460,"answer_end_ms":229220},
+  {"id":"Q17","source":"assistant_development","query":"贡献自己的勇气和价值感有什么关系？","answer_start_ms":237900,"answer_end_ms":250900},
+  {"id":"Q18","source":"assistant_development","query":"一个共同体里缺乏价值时可以怎么办？","answer_start_ms":270900,"answer_end_ms":277340},
+  {"id":"Q19","source":"assistant_development","query":"如何把对自己的执着转成对他人的关心？","answer_start_ms":277860,"answer_end_ms":286180},
+  {"id":"Q20","source":"assistant_development","query":"人生是一条线还是连续的当下？","answer_start_ms":301980,"answer_end_ms":312340}
+]

@@ -1,0 +1,1281 @@
+{
+  "created_at": "2026-09-07T07:58:09.568684+00:00",
+  "video_id": "6fac2137-a800-4b99-8d70-c38f16eacdab",
+  "index_version": "26f8d69c444f3349",
+  "chunk_count": 5,
+  "warmup_ms": 7519.02,
+  "metrics": {
+    "vector": {
+      "count": 20,
+      "hit_at_1": 0.7,
+      "hit_at_3": 1,
+      "recall_at_3": 0.95,
+      "mrr_at_3": 0.8416666666666667,
+      "latency_median_ms": 104.685,
+      "latency_max_ms": 152.03,
+      "fallback_count": null
+    },
+    "hybrid": {
+      "count": 20,
+      "hit_at_1": 0.8,
+      "hit_at_3": 0.95,
+      "recall_at_3": 0.95,
+      "mrr_at_3": 0.8666666666666667,
+      "latency_median_ms": 106.295,
+      "latency_max_ms": 128.25,
+      "fallback_count": null
+    },
+    "multi": {
+      "count": 20,
+      "hit_at_1": 0.95,
+      "hit_at_3": 0.95,
+      "recall_at_3": 0.925,
+      "mrr_at_3": 0.95,
+      "latency_median_ms": 870.665,
+      "latency_max_ms": 2114.51,
+      "fallback_count": 1
+    }
+  },
+  "rows": [
+    {
+      "case_id": "Q01",
+      "source": "user_gold",
+      "mode": "vector",
+      "queries": [
+        "什么是课题分离？"
+      ],
+      "gold_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "6b72426906ed453a3f550873"
+      ],
+      "returned_chunk_ids": [
+        "6b72426906ed453a3f550873",
+        "21a0dc24d02d0b2cae25be4b",
+        "bfad86beb3fceb9aae6650c2"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 0.5,
+      "elapsed_ms": 113.15,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q01",
+      "source": "user_gold",
+      "mode": "hybrid",
+      "queries": [
+        "什么是课题分离？"
+      ],
+      "gold_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "6b72426906ed453a3f550873"
+      ],
+      "returned_chunk_ids": [
+        "6b72426906ed453a3f550873",
+        "0a44609039c10b93dd8c5a7c",
+        "bfad86beb3fceb9aae6650c2"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 106.22,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q01",
+      "source": "user_gold",
+      "mode": "multi",
+      "queries": [
+        "什么是课题分离？",
+        "课题分离的定义是什么？",
+        "请解释一下什么是课题分离"
+      ],
+      "gold_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "6b72426906ed453a3f550873"
+      ],
+      "returned_chunk_ids": [
+        "6b72426906ed453a3f550873",
+        "0a44609039c10b93dd8c5a7c",
+        "bfad86beb3fceb9aae6650c2"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 1018.81,
+      "fallback_reason": null
+    },
+    {
+      "case_id": "Q02",
+      "source": "user_gold",
+      "mode": "vector",
+      "queries": [
+        "如何有接纳别人的勇气？"
+      ],
+      "gold_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c"
+      ],
+      "returned_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "6b72426906ed453a3f550873",
+        "bfad86beb3fceb9aae6650c2"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 122.99,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q02",
+      "source": "user_gold",
+      "mode": "hybrid",
+      "queries": [
+        "如何有接纳别人的勇气？"
+      ],
+      "gold_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c"
+      ],
+      "returned_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "6b72426906ed453a3f550873",
+        "a8ecf699c7d2ee6eaf8ece00"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 124.24,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q02",
+      "source": "user_gold",
+      "mode": "multi",
+      "queries": [
+        "如何有接纳别人的勇气？",
+        "怎样拥有接纳他人的勇气？",
+        "如何培养包容别人的胆量？"
+      ],
+      "gold_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c"
+      ],
+      "returned_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "6b72426906ed453a3f550873",
+        "bfad86beb3fceb9aae6650c2"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 1008.03,
+      "fallback_reason": null
+    },
+    {
+      "case_id": "Q03",
+      "source": "assistant_development",
+      "mode": "vector",
+      "queries": [
+        "决定我们自身的是过去经历还是赋予经历的意义？"
+      ],
+      "gold_chunk_ids": [
+        "a8ecf699c7d2ee6eaf8ece00"
+      ],
+      "returned_chunk_ids": [
+        "6b72426906ed453a3f550873",
+        "a8ecf699c7d2ee6eaf8ece00",
+        "0a44609039c10b93dd8c5a7c"
+      ],
+      "first_relevant_rank": 2,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 108.41,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q03",
+      "source": "assistant_development",
+      "mode": "hybrid",
+      "queries": [
+        "决定我们自身的是过去经历还是赋予经历的意义？"
+      ],
+      "gold_chunk_ids": [
+        "a8ecf699c7d2ee6eaf8ece00"
+      ],
+      "returned_chunk_ids": [
+        "a8ecf699c7d2ee6eaf8ece00",
+        "6b72426906ed453a3f550873",
+        "bfad86beb3fceb9aae6650c2"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 105.46,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q03",
+      "source": "assistant_development",
+      "mode": "multi",
+      "queries": [
+        "决定我们自身的是过去经历还是赋予经历的意义？",
+        "决定我们自身的是过去的经历还是对经历赋予的意义？",
+        "是过去经历本身，还是我们赋予经历的意义决定了我们是谁？"
+      ],
+      "gold_chunk_ids": [
+        "a8ecf699c7d2ee6eaf8ece00"
+      ],
+      "returned_chunk_ids": [
+        "a8ecf699c7d2ee6eaf8ece00",
+        "6b72426906ed453a3f550873",
+        "0a44609039c10b93dd8c5a7c"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 867.46,
+      "fallback_reason": null
+    },
+    {
+      "case_id": "Q04",
+      "source": "assistant_development",
+      "mode": "vector",
+      "queries": [
+        "视频中的目的论怎么解释痛苦？"
+      ],
+      "gold_chunk_ids": [
+        "a8ecf699c7d2ee6eaf8ece00"
+      ],
+      "returned_chunk_ids": [
+        "a8ecf699c7d2ee6eaf8ece00",
+        "21a0dc24d02d0b2cae25be4b",
+        "6b72426906ed453a3f550873"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 100.79,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q04",
+      "source": "assistant_development",
+      "mode": "hybrid",
+      "queries": [
+        "视频中的目的论怎么解释痛苦？"
+      ],
+      "gold_chunk_ids": [
+        "a8ecf699c7d2ee6eaf8ece00"
+      ],
+      "returned_chunk_ids": [
+        "a8ecf699c7d2ee6eaf8ece00",
+        "21a0dc24d02d0b2cae25be4b",
+        "bfad86beb3fceb9aae6650c2"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 107.6,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q04",
+      "source": "assistant_development",
+      "mode": "multi",
+      "queries": [
+        "视频中的目的论怎么解释痛苦？",
+        "视频里是如何用目的论来解释痛苦的？",
+        "该视频中关于痛苦的目的论解释是什么？"
+      ],
+      "gold_chunk_ids": [
+        "a8ecf699c7d2ee6eaf8ece00"
+      ],
+      "returned_chunk_ids": [
+        "a8ecf699c7d2ee6eaf8ece00",
+        "21a0dc24d02d0b2cae25be4b",
+        "bfad86beb3fceb9aae6650c2"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 873.87,
+      "fallback_reason": null
+    },
+    {
+      "case_id": "Q05",
+      "source": "assistant_development",
+      "mode": "vector",
+      "queries": [
+        "为什么有人用痛苦让伤害他的人愧疚？"
+      ],
+      "gold_chunk_ids": [
+        "a8ecf699c7d2ee6eaf8ece00"
+      ],
+      "returned_chunk_ids": [
+        "a8ecf699c7d2ee6eaf8ece00",
+        "21a0dc24d02d0b2cae25be4b",
+        "6b72426906ed453a3f550873"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 152.03,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q05",
+      "source": "assistant_development",
+      "mode": "hybrid",
+      "queries": [
+        "为什么有人用痛苦让伤害他的人愧疚？"
+      ],
+      "gold_chunk_ids": [
+        "a8ecf699c7d2ee6eaf8ece00"
+      ],
+      "returned_chunk_ids": [
+        "a8ecf699c7d2ee6eaf8ece00",
+        "6b72426906ed453a3f550873",
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 105.85,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q05",
+      "source": "assistant_development",
+      "mode": "multi",
+      "queries": [
+        "为什么有人用痛苦让伤害他的人愧疚？",
+        "为何有人通过展示痛苦来使伤害自己的人感到愧疚？",
+        "人们为什么用痛苦来让加害者产生愧疚感？"
+      ],
+      "gold_chunk_ids": [
+        "a8ecf699c7d2ee6eaf8ece00"
+      ],
+      "returned_chunk_ids": [
+        "a8ecf699c7d2ee6eaf8ece00",
+        "21a0dc24d02d0b2cae25be4b",
+        "6b72426906ed453a3f550873"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 993.38,
+      "fallback_reason": null
+    },
+    {
+      "case_id": "Q06",
+      "source": "assistant_development",
+      "mode": "vector",
+      "queries": [
+        "第一种勇气是什么？"
+      ],
+      "gold_chunk_ids": [
+        "a8ecf699c7d2ee6eaf8ece00"
+      ],
+      "returned_chunk_ids": [
+        "a8ecf699c7d2ee6eaf8ece00",
+        "0a44609039c10b93dd8c5a7c",
+        "6b72426906ed453a3f550873"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 104.15,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q06",
+      "source": "assistant_development",
+      "mode": "hybrid",
+      "queries": [
+        "第一种勇气是什么？"
+      ],
+      "gold_chunk_ids": [
+        "a8ecf699c7d2ee6eaf8ece00"
+      ],
+      "returned_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "a8ecf699c7d2ee6eaf8ece00",
+        "6b72426906ed453a3f550873"
+      ],
+      "first_relevant_rank": 2,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 106.26,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q06",
+      "source": "assistant_development",
+      "mode": "multi",
+      "queries": [
+        "第一种勇气是什么？",
+        "第一种勇气的定义是什么？"
+      ],
+      "gold_chunk_ids": [
+        "a8ecf699c7d2ee6eaf8ece00"
+      ],
+      "returned_chunk_ids": [
+        "a8ecf699c7d2ee6eaf8ece00",
+        "0a44609039c10b93dd8c5a7c",
+        "6b72426906ed453a3f550873"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 2114.51,
+      "fallback_reason": null
+    },
+    {
+      "case_id": "Q07",
+      "source": "assistant_development",
+      "mode": "vector",
+      "queries": [
+        "健全的自卑感应该和谁比较？"
+      ],
+      "gold_chunk_ids": [
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "returned_chunk_ids": [
+        "21a0dc24d02d0b2cae25be4b",
+        "0a44609039c10b93dd8c5a7c",
+        "6b72426906ed453a3f550873"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 106.92,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q07",
+      "source": "assistant_development",
+      "mode": "hybrid",
+      "queries": [
+        "健全的自卑感应该和谁比较？"
+      ],
+      "gold_chunk_ids": [
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "returned_chunk_ids": [
+        "21a0dc24d02d0b2cae25be4b",
+        "0a44609039c10b93dd8c5a7c",
+        "a8ecf699c7d2ee6eaf8ece00"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 106.33,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q07",
+      "source": "assistant_development",
+      "mode": "multi",
+      "queries": [
+        "健全的自卑感应该和谁比较？",
+        "如何建立健康的自卑感，应该以谁为参照对象？"
+      ],
+      "gold_chunk_ids": [
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "returned_chunk_ids": [
+        "21a0dc24d02d0b2cae25be4b",
+        "0a44609039c10b93dd8c5a7c",
+        "6b72426906ed453a3f550873"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 845.15,
+      "fallback_reason": null
+    },
+    {
+      "case_id": "Q08",
+      "source": "assistant_development",
+      "mode": "vector",
+      "queries": [
+        "小明身高的例子说明了什么自卑心理？"
+      ],
+      "gold_chunk_ids": [
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "returned_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "21a0dc24d02d0b2cae25be4b",
+        "6b72426906ed453a3f550873"
+      ],
+      "first_relevant_rank": 2,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 100.28,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q08",
+      "source": "assistant_development",
+      "mode": "hybrid",
+      "queries": [
+        "小明身高的例子说明了什么自卑心理？"
+      ],
+      "gold_chunk_ids": [
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "returned_chunk_ids": [
+        "21a0dc24d02d0b2cae25be4b",
+        "0a44609039c10b93dd8c5a7c",
+        "6b72426906ed453a3f550873"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 105.24,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q08",
+      "source": "assistant_development",
+      "mode": "multi",
+      "queries": [
+        "小明身高的例子说明了什么自卑心理？",
+        "小明身高的例子反映了哪种自卑心理？",
+        "通过小明身高的例子说明了什么类型的自卑感？"
+      ],
+      "gold_chunk_ids": [
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "returned_chunk_ids": [
+        "21a0dc24d02d0b2cae25be4b",
+        "0a44609039c10b93dd8c5a7c",
+        "6b72426906ed453a3f550873"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 896.8,
+      "fallback_reason": null
+    },
+    {
+      "case_id": "Q09",
+      "source": "assistant_development",
+      "mode": "vector",
+      "queries": [
+        "将不幸当做武器的人为什么一直需要不幸？"
+      ],
+      "gold_chunk_ids": [
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "returned_chunk_ids": [
+        "21a0dc24d02d0b2cae25be4b",
+        "a8ecf699c7d2ee6eaf8ece00",
+        "0a44609039c10b93dd8c5a7c"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 104.51,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q09",
+      "source": "assistant_development",
+      "mode": "hybrid",
+      "queries": [
+        "将不幸当做武器的人为什么一直需要不幸？"
+      ],
+      "gold_chunk_ids": [
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "returned_chunk_ids": [
+        "21a0dc24d02d0b2cae25be4b",
+        "0a44609039c10b93dd8c5a7c",
+        "a8ecf699c7d2ee6eaf8ece00"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 104.63,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q09",
+      "source": "assistant_development",
+      "mode": "multi",
+      "queries": [
+        "将不幸当做武器的人为什么一直需要不幸？",
+        "把不幸当作武器的人为何持续依赖不幸？"
+      ],
+      "gold_chunk_ids": [
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "returned_chunk_ids": [
+        "21a0dc24d02d0b2cae25be4b",
+        "bfad86beb3fceb9aae6650c2",
+        "0a44609039c10b93dd8c5a7c"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 818.7,
+      "fallback_reason": null
+    },
+    {
+      "case_id": "Q10",
+      "source": "assistant_development",
+      "mode": "vector",
+      "queries": [
+        "不能改变客观事实时可以改变什么？"
+      ],
+      "gold_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "returned_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "6b72426906ed453a3f550873",
+        "a8ecf699c7d2ee6eaf8ece00"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 0.5,
+      "elapsed_ms": 95.71,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q10",
+      "source": "assistant_development",
+      "mode": "hybrid",
+      "queries": [
+        "不能改变客观事实时可以改变什么？"
+      ],
+      "gold_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "returned_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "6b72426906ed453a3f550873",
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 115.54,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q10",
+      "source": "assistant_development",
+      "mode": "multi",
+      "queries": [
+        "不能改变客观事实时可以改变什么？",
+        "在不能改变客观事实的前提下，可以改变什么？",
+        "如果无法改变客观事实，那么可以改变的是什么？"
+      ],
+      "gold_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "returned_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "6b72426906ed453a3f550873",
+        "bfad86beb3fceb9aae6650c2"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 0.5,
+      "elapsed_ms": 801.1,
+      "fallback_reason": null
+    },
+    {
+      "case_id": "Q11",
+      "source": "assistant_development",
+      "mode": "vector",
+      "queries": [
+        "人际关系中竞争为什么带来自卑？"
+      ],
+      "gold_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c"
+      ],
+      "returned_chunk_ids": [
+        "21a0dc24d02d0b2cae25be4b",
+        "0a44609039c10b93dd8c5a7c",
+        "6b72426906ed453a3f550873"
+      ],
+      "first_relevant_rank": 2,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 100.9,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q11",
+      "source": "assistant_development",
+      "mode": "hybrid",
+      "queries": [
+        "人际关系中竞争为什么带来自卑？"
+      ],
+      "gold_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c"
+      ],
+      "returned_chunk_ids": [
+        "6b72426906ed453a3f550873",
+        "21a0dc24d02d0b2cae25be4b",
+        "0a44609039c10b93dd8c5a7c"
+      ],
+      "first_relevant_rank": 3,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 105.1,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q11",
+      "source": "assistant_development",
+      "mode": "multi",
+      "queries": [
+        "人际关系中竞争为什么带来自卑？",
+        "为什么人际关系中的竞争会导致自卑？",
+        "在人际交往中，竞争为何会引发自卑感？"
+      ],
+      "gold_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c"
+      ],
+      "returned_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "21a0dc24d02d0b2cae25be4b",
+        "6b72426906ed453a3f550873"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 779.87,
+      "fallback_reason": null
+    },
+    {
+      "case_id": "Q12",
+      "source": "assistant_development",
+      "mode": "vector",
+      "queries": [
+        "不再执着胜负后怎么真心祝福别人？"
+      ],
+      "gold_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c"
+      ],
+      "returned_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "bfad86beb3fceb9aae6650c2",
+        "6b72426906ed453a3f550873"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 100.85,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q12",
+      "source": "assistant_development",
+      "mode": "hybrid",
+      "queries": [
+        "不再执着胜负后怎么真心祝福别人？"
+      ],
+      "gold_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c"
+      ],
+      "returned_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "bfad86beb3fceb9aae6650c2",
+        "6b72426906ed453a3f550873"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 107.15,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q12",
+      "source": "assistant_development",
+      "mode": "multi",
+      "queries": [
+        "不再执着胜负后怎么真心祝福别人？",
+        "放下胜负欲后如何真诚地祝福他人？",
+        "不再纠结输赢之后怎样真心祝愿别人？"
+      ],
+      "gold_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c"
+      ],
+      "returned_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "bfad86beb3fceb9aae6650c2",
+        "6b72426906ed453a3f550873"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 860.18,
+      "fallback_reason": null
+    },
+    {
+      "case_id": "Q13",
+      "source": "assistant_development",
+      "mode": "vector",
+      "queries": [
+        "怎样才能不把世界看成危险的地方？"
+      ],
+      "gold_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c"
+      ],
+      "returned_chunk_ids": [
+        "bfad86beb3fceb9aae6650c2",
+        "21a0dc24d02d0b2cae25be4b",
+        "0a44609039c10b93dd8c5a7c"
+      ],
+      "first_relevant_rank": 3,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 108.19,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q13",
+      "source": "assistant_development",
+      "mode": "hybrid",
+      "queries": [
+        "怎样才能不把世界看成危险的地方？"
+      ],
+      "gold_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c"
+      ],
+      "returned_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "bfad86beb3fceb9aae6650c2",
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 128.25,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q13",
+      "source": "assistant_development",
+      "mode": "multi",
+      "queries": [
+        "怎样才能不把世界看成危险的地方？",
+        "如何避免将世界视为危险之地？",
+        "有什么方法能让我不把世界看作充满危险的地方？"
+      ],
+      "gold_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c"
+      ],
+      "returned_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "bfad86beb3fceb9aae6650c2",
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 884.3,
+      "fallback_reason": null
+    },
+    {
+      "case_id": "Q14",
+      "source": "assistant_development",
+      "mode": "vector",
+      "queries": [
+        "自由为什么是不再寻求别人的认可？"
+      ],
+      "gold_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c"
+      ],
+      "returned_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "6b72426906ed453a3f550873",
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 105.98,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q14",
+      "source": "assistant_development",
+      "mode": "hybrid",
+      "queries": [
+        "自由为什么是不再寻求别人的认可？"
+      ],
+      "gold_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c"
+      ],
+      "returned_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "6b72426906ed453a3f550873",
+        "a8ecf699c7d2ee6eaf8ece00"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 109.2,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q14",
+      "source": "assistant_development",
+      "mode": "multi",
+      "queries": [
+        "自由为什么是不再寻求别人的认可？",
+        "为什么说自由是不再寻求别人的认可？",
+        "自由与不再寻求他人认可之间有什么关系？"
+      ],
+      "gold_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c"
+      ],
+      "returned_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "6b72426906ed453a3f550873",
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 714.94,
+      "fallback_reason": null
+    },
+    {
+      "case_id": "Q15",
+      "source": "assistant_development",
+      "mode": "vector",
+      "queries": [
+        "我信任朋友和朋友回应信任分别是谁的课题？"
+      ],
+      "gold_chunk_ids": [
+        "6b72426906ed453a3f550873"
+      ],
+      "returned_chunk_ids": [
+        "6b72426906ed453a3f550873",
+        "bfad86beb3fceb9aae6650c2",
+        "0a44609039c10b93dd8c5a7c"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 103.59,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q15",
+      "source": "assistant_development",
+      "mode": "hybrid",
+      "queries": [
+        "我信任朋友和朋友回应信任分别是谁的课题？"
+      ],
+      "gold_chunk_ids": [
+        "6b72426906ed453a3f550873"
+      ],
+      "returned_chunk_ids": [
+        "6b72426906ed453a3f550873",
+        "0a44609039c10b93dd8c5a7c",
+        "bfad86beb3fceb9aae6650c2"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 104.87,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q15",
+      "source": "assistant_development",
+      "mode": "multi",
+      "queries": [
+        "我信任朋友和朋友回应信任分别是谁的课题？",
+        "在阿德勒心理学中，我信任朋友和朋友回应信任分别属于谁的课题？"
+      ],
+      "gold_chunk_ids": [
+        "6b72426906ed453a3f550873"
+      ],
+      "returned_chunk_ids": [
+        "6b72426906ed453a3f550873",
+        "0a44609039c10b93dd8c5a7c",
+        "bfad86beb3fceb9aae6650c2"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 1264.82,
+      "fallback_reason": null
+    },
+    {
+      "case_id": "Q16",
+      "source": "assistant_development",
+      "mode": "vector",
+      "queries": [
+        "为什么不应该干涉别人的课题？"
+      ],
+      "gold_chunk_ids": [
+        "6b72426906ed453a3f550873"
+      ],
+      "returned_chunk_ids": [
+        "6b72426906ed453a3f550873",
+        "0a44609039c10b93dd8c5a7c",
+        "bfad86beb3fceb9aae6650c2"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 104.54,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q16",
+      "source": "assistant_development",
+      "mode": "hybrid",
+      "queries": [
+        "为什么不应该干涉别人的课题？"
+      ],
+      "gold_chunk_ids": [
+        "6b72426906ed453a3f550873"
+      ],
+      "returned_chunk_ids": [
+        "6b72426906ed453a3f550873",
+        "0a44609039c10b93dd8c5a7c",
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 106.46,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q16",
+      "source": "assistant_development",
+      "mode": "multi",
+      "queries": [
+        "为什么不应该干涉别人的课题？",
+        "干涉他人课题为何不可取？"
+      ],
+      "gold_chunk_ids": [
+        "6b72426906ed453a3f550873"
+      ],
+      "returned_chunk_ids": [
+        "6b72426906ed453a3f550873",
+        "0a44609039c10b93dd8c5a7c",
+        "bfad86beb3fceb9aae6650c2"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 877.03,
+      "fallback_reason": null
+    },
+    {
+      "case_id": "Q17",
+      "source": "assistant_development",
+      "mode": "vector",
+      "queries": [
+        "贡献自己的勇气和价值感有什么关系？"
+      ],
+      "gold_chunk_ids": [
+        "6b72426906ed453a3f550873"
+      ],
+      "returned_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "6b72426906ed453a3f550873",
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "first_relevant_rank": 2,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 107.69,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q17",
+      "source": "assistant_development",
+      "mode": "hybrid",
+      "queries": [
+        "贡献自己的勇气和价值感有什么关系？"
+      ],
+      "gold_chunk_ids": [
+        "6b72426906ed453a3f550873"
+      ],
+      "returned_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "bfad86beb3fceb9aae6650c2",
+        "a8ecf699c7d2ee6eaf8ece00"
+      ],
+      "first_relevant_rank": null,
+      "recall_at_3": 0.0,
+      "elapsed_ms": 111.77,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q17",
+      "source": "assistant_development",
+      "mode": "multi",
+      "queries": [
+        "贡献自己的勇气和价值感有什么关系？",
+        "勇气与价值感之间有什么联系？",
+        "贡献自己的勇气对价值感有何影响？"
+      ],
+      "gold_chunk_ids": [
+        "6b72426906ed453a3f550873"
+      ],
+      "returned_chunk_ids": [
+        "0a44609039c10b93dd8c5a7c",
+        "bfad86beb3fceb9aae6650c2",
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "first_relevant_rank": null,
+      "recall_at_3": 0.0,
+      "elapsed_ms": 747.14,
+      "fallback_reason": null
+    },
+    {
+      "case_id": "Q18",
+      "source": "assistant_development",
+      "mode": "vector",
+      "queries": [
+        "一个共同体里缺乏价值时可以怎么办？"
+      ],
+      "gold_chunk_ids": [
+        "bfad86beb3fceb9aae6650c2"
+      ],
+      "returned_chunk_ids": [
+        "bfad86beb3fceb9aae6650c2",
+        "21a0dc24d02d0b2cae25be4b",
+        "6b72426906ed453a3f550873"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 104.83,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q18",
+      "source": "assistant_development",
+      "mode": "hybrid",
+      "queries": [
+        "一个共同体里缺乏价值时可以怎么办？"
+      ],
+      "gold_chunk_ids": [
+        "bfad86beb3fceb9aae6650c2"
+      ],
+      "returned_chunk_ids": [
+        "bfad86beb3fceb9aae6650c2",
+        "6b72426906ed453a3f550873",
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 103.58,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q18",
+      "source": "assistant_development",
+      "mode": "multi",
+      "queries": [
+        "一个共同体里缺乏价值时可以怎么办？",
+        "当一个共同体缺乏价值时应该采取什么措施？",
+        "共同体中缺少价值该如何应对？"
+      ],
+      "gold_chunk_ids": [
+        "bfad86beb3fceb9aae6650c2"
+      ],
+      "returned_chunk_ids": [
+        "bfad86beb3fceb9aae6650c2",
+        "6b72426906ed453a3f550873",
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 822.56,
+      "fallback_reason": null
+    },
+    {
+      "case_id": "Q19",
+      "source": "assistant_development",
+      "mode": "vector",
+      "queries": [
+        "如何把对自己的执着转成对他人的关心？"
+      ],
+      "gold_chunk_ids": [
+        "bfad86beb3fceb9aae6650c2"
+      ],
+      "returned_chunk_ids": [
+        "6b72426906ed453a3f550873",
+        "bfad86beb3fceb9aae6650c2",
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "first_relevant_rank": 2,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 108.68,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q19",
+      "source": "assistant_development",
+      "mode": "hybrid",
+      "queries": [
+        "如何把对自己的执着转成对他人的关心？"
+      ],
+      "gold_chunk_ids": [
+        "bfad86beb3fceb9aae6650c2"
+      ],
+      "returned_chunk_ids": [
+        "6b72426906ed453a3f550873",
+        "bfad86beb3fceb9aae6650c2",
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "first_relevant_rank": 2,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 113.14,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q19",
+      "source": "assistant_development",
+      "mode": "multi",
+      "queries": [
+        "如何把对自己的执着转成对他人的关心？",
+        "怎样将对自我的执着转化为对他人的关怀？",
+        "如何把关注自己的执念转变为关心他人？"
+      ],
+      "gold_chunk_ids": [
+        "bfad86beb3fceb9aae6650c2"
+      ],
+      "returned_chunk_ids": [
+        "bfad86beb3fceb9aae6650c2",
+        "6b72426906ed453a3f550873",
+        "21a0dc24d02d0b2cae25be4b"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 884.49,
+      "fallback_reason": null
+    },
+    {
+      "case_id": "Q20",
+      "source": "assistant_development",
+      "mode": "vector",
+      "queries": [
+        "人生是一条线还是连续的当下？"
+      ],
+      "gold_chunk_ids": [
+        "bfad86beb3fceb9aae6650c2"
+      ],
+      "returned_chunk_ids": [
+        "bfad86beb3fceb9aae6650c2",
+        "a8ecf699c7d2ee6eaf8ece00",
+        "0a44609039c10b93dd8c5a7c"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 102.76,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q20",
+      "source": "assistant_development",
+      "mode": "hybrid",
+      "queries": [
+        "人生是一条线还是连续的当下？"
+      ],
+      "gold_chunk_ids": [
+        "bfad86beb3fceb9aae6650c2"
+      ],
+      "returned_chunk_ids": [
+        "bfad86beb3fceb9aae6650c2",
+        "a8ecf699c7d2ee6eaf8ece00",
+        "0a44609039c10b93dd8c5a7c"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 105.86,
+      "fallback_reason": "disabled"
+    },
+    {
+      "case_id": "Q20",
+      "source": "assistant_development",
+      "mode": "multi",
+      "queries": [
+        "人生是一条线还是连续的当下？"
+      ],
+      "gold_chunk_ids": [
+        "bfad86beb3fceb9aae6650c2"
+      ],
+      "returned_chunk_ids": [
+        "bfad86beb3fceb9aae6650c2",
+        "a8ecf699c7d2ee6eaf8ece00",
+        "0a44609039c10b93dd8c5a7c"
+      ],
+      "first_relevant_rank": 1,
+      "recall_at_3": 1.0,
+      "elapsed_ms": 663.68,
+      "fallback_reason": "no_rewrites"
+    }
+  ],
+  "limitations": "Single-video development set; ASR-derived windows, not human frame-verified. No held-out/generalization or final-answer quality claim."
+}
