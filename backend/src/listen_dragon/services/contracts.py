@@ -52,7 +52,3 @@ class IndexBuilder(Protocol):
 
 class HybridRetriever(Protocol):
     def search(self, video_id: str, query: str, limit: int = 6) -> Sequence[RetrievedChunk]: ...
-
-
-class AnswerGenerator(Protocol):
-    def answer(self, question: str, context: Sequence[RetrievedChunk]) -> str: ...
