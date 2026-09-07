@@ -14,10 +14,17 @@ class Settings(BaseSettings):
     max_video_minutes: int = 60
     worker_poll_seconds: float = 2.0
     worker_concurrency: int = 1
+    worker_lease_seconds: int = 30 * 60
+    ffmpeg_binary: str = "ffmpeg"
+    ffprobe_binary: str = "ffprobe"
     cors_origins: str = "http://localhost:5173"
     asr_model: str = "base"
     asr_device: str = "cpu"
     asr_compute_type: str = "int8"
+    chunk_min_chars: int = 300
+    chunk_target_chars: int = 400
+    chunk_max_chars: int = 500
+    chunk_overlap_chars: int = 50
     embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     llm_base_url: str | None = None
     llm_api_key: str | None = None

@@ -21,12 +21,33 @@ class RetrievedChunk:
     score: float
 
 
+@dataclass(frozen=True)
+class DocumentChunk:
+    chunk_id: str
+    start_ms: int
+    end_ms: int
+    text: str
+    token_count: int
+
+
 class MediaExtractor(Protocol):
     def extract_audio(self, video: Path, output: Path) -> Path: ...
 
 
 class SpeechRecognizer(Protocol):
     def transcribe(self, audio: Path) -> Sequence[TranscriptSegment]: ...
+
+
+class TextChunker(Protocol):
+    def split(
+        self,
+        video_id: str,
+        segments: Sequence[TranscriptSegment],
+    ) -> Sequence[DocumentChunk]: ...
+
+
+class IndexBuilder(Protocol):
+    def build(self, chunks: Sequence[DocumentChunk], output_root: Path) -> Path: ...
 
 
 class HybridRetriever(Protocol):
