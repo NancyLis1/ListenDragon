@@ -39,6 +39,10 @@
 .inline-note p { margin: 8px 0 0; font-family: Georgia, "Songti SC", serif; font-size: 16px; }
 .inline-note textarea { width: 100%; min-height: 64px; margin-top: 8px; padding: 7px; border: 1px solid #e8d9b0; border-radius: 4px; background: rgba(255,255,255,.62); resize: vertical; }
 .summary-panel { display: grid; gap: 30px; padding: 28px 4px 20px; }
+.generated-summary { display: grid; gap: 10px; }
+.generated-summary h2 { margin: 12px 0 0; font-size: 18px; }
+.generated-summary p { margin: 0; color: #455164; font-family: Georgia, "Songti SC", serif; font-size: 17px; line-height: 1.7; }
+.reader-error { color: #a53636; }
 .summary-overview { padding: 22px 24px; border: 1px solid #dce6f7; border-radius: 12px; background: linear-gradient(135deg, #f7faff, #eef5ff); }
 .summary-overview span { color: #2866dc; font-size: 13px; font-weight: 750; letter-spacing: .06em; }
 .summary-overview p { margin: 12px 0 0; color: #3d4859; font-family: Georgia, "Songti SC", serif; font-size: 18px; line-height: 1.75; }

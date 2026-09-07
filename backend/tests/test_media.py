@@ -37,7 +37,8 @@ def test_ffmpeg_extractor_probes_and_creates_mono_16khz_wav(
 
     result = extractor.extract_audio(video, output)
 
-    assert result == output
+    assert result.audio_path == output
+    assert result.duration_ms == 12_500
     assert output.read_bytes() == b"wav"
     assert commands[0][0] == "ffprobe-test"
     assert commands[1][0] == "ffmpeg-test"

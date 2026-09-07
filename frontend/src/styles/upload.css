@@ -16,10 +16,12 @@
 .step-indicator svg { width: 19px; height: 19px; stroke-width: 2.4; }
 .processing-step--complete .step-indicator { border-color: #54bf7d; background: #54bf7d; }
 .processing-step--working .step-indicator { border-color: #3e7df4; border-right-color: #dce8fc; animation: spin 1s linear infinite; }
+.processing-step--failed .step-indicator { border-color: #c84444; background: #fff1f1; }
 .step-copy { display: grid; gap: 4px; }
 .step-copy strong { font-size: 15px; font-weight: 650; }
 .step-copy small, .step-detail { color: #788294; font-size: 14px; }
 .processing-step--working .step-detail { color: #2a6bdd; font-weight: 650; }
+.processing-step--failed .step-detail { color: #b33131; font-weight: 700; }
 .upload-aside { padding: 78px 40px; border-left: 1px solid #e5e8ed; }
 .file-summary { padding-bottom: 54px; border-bottom: 1px solid #e5e8ed; }
 .file-preview { position: relative; display: grid; height: 132px; place-items: center; margin: 30px 0 17px; overflow: hidden; border-radius: 3px; color: #627086; background: linear-gradient(90deg, #050607 0 8%, #fafafa 8% 92%, #050607 92%); font-size: 11px; text-align: center; }

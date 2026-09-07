@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     retrieval_rrf_k: int = Field(default=60, ge=1)
     query_expansion_enabled: bool = True
     query_expansion_timeout_seconds: float = Field(default=8.0, gt=0, le=60)
+    llm_timeout_seconds: float = Field(default=30.0, gt=0, le=120)
+    llm_max_response_bytes: int = Field(default=1024 * 1024, ge=4096, le=4 * 1024 * 1024)
+    generation_context_chars: int = Field(default=24000, ge=4000, le=120000)
+    conversation_memory_chars: int = Field(default=1200, ge=200, le=4000)
 
     @property
     def cors_origin_list(self) -> list[str]:

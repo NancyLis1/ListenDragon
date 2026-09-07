@@ -4,6 +4,8 @@ import json
 import subprocess
 from pathlib import Path
 
+from listen_dragon.services.contracts import ExtractedMedia
+
 
 class MediaProcessingError(RuntimeError):
     def __init__(self, error_code: str, message: str) -> None:
@@ -25,7 +27,7 @@ class FfmpegMediaExtractor:
         self.max_video_seconds = max_video_minutes * 60
         self.timeout_seconds = timeout_seconds
 
-    def extract_audio(self, video: Path, output: Path) -> Path:
+    def extract_audio(self, video: Path, output: Path) -> ExtractedMedia:
         duration_seconds = self._probe_duration(video)
         if duration_seconds <= 0:
             raise MediaProcessingError("INVALID_MEDIA", "Video duration must be positive")
@@ -77,7 +79,7 @@ class FfmpegMediaExtractor:
             raise MediaProcessingError("FFMPEG_FAILED", message[-1000:]) from exc
         finally:
             temporary_output.unlink(missing_ok=True)
-        return output
+        return ExtractedMedia(output, max(1, round(duration_seconds * 1000)))
 
     def _probe_duration(self, video: Path) -> float:
         command = [

@@ -5,20 +5,20 @@ from listen_dragon.domain.models import JobState
 from listen_dragon.infrastructure.media import MediaProcessingError
 from listen_dragon.infrastructure.sqlite_jobs import SqliteJobRepository
 from listen_dragon.services.chunking import SemanticChunker
-from listen_dragon.services.contracts import DocumentChunk, TranscriptSegment
+from listen_dragon.services.contracts import DocumentChunk, ExtractedMedia, TranscriptSegment
 from listen_dragon.worker import process_next_job
 
 
 class SuccessfulExtractor:
-    def extract_audio(self, video: Path, output: Path) -> Path:
+    def extract_audio(self, video: Path, output: Path) -> ExtractedMedia:
         assert video.read_bytes() == b"video"
         output.parent.mkdir(parents=True)
         output.write_bytes(b"wav")
-        return output
+        return ExtractedMedia(output, 12_500)
 
 
 class FailingExtractor:
-    def extract_audio(self, video: Path, output: Path) -> Path:
+    def extract_audio(self, video: Path, output: Path) -> ExtractedMedia:
         raise MediaProcessingError("INVALID_MEDIA", "not a real video")
 
 
@@ -91,6 +91,7 @@ def test_worker_extracts_audio_and_advances_job(tmp_path: Path) -> None:
     assert job is not None
     assert job.state is JobState.transcribing
     assert job.progress == 30
+    assert repository.get_stored_video(video_id).duration_ms == 12_500
 
 
 def test_worker_completes_transcription_chunking_and_indexing(tmp_path: Path) -> None:

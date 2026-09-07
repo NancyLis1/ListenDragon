@@ -1,11 +1,11 @@
 import type { ChatMessage, LectureDetail, ProcessingStep, TranscriptSegment } from "../types/lecture";
 
 export const processingSteps: ProcessingStep[] = [
-  { id: "upload", title: "准备视频文件", description: "等待选择本地视频", state: "pending", detail: "等待中" },
-  { id: "transcript", title: "生成演示转写", description: "准备带时间戳的示例内容", state: "pending", detail: "等待中" },
-  { id: "slides", title: "模拟幻灯片识别", description: "展示处理阶段变化", state: "pending", detail: "等待中" },
-  { id: "index", title: "构建会话检索", description: "让课程可在当前会话中搜索", state: "pending", detail: "等待中" },
-  { id: "summary", title: "生成演示摘要", description: "准备概览、要点和章节", state: "pending", detail: "等待中" },
+  { id: "upload", title: "上传视频", description: "流式保存视频文件", state: "pending", detail: "等待中" },
+  { id: "extract", title: "提取音频", description: "校验媒体并提取语音", state: "pending", detail: "等待中" },
+  { id: "transcript", title: "生成转写", description: "识别语音并生成时间戳", state: "pending", detail: "等待中" },
+  { id: "chunk", title: "整理片段", description: "按语义切分转写内容", state: "pending", detail: "等待中" },
+  { id: "index", title: "构建检索索引", description: "发布向量和关键词索引", state: "pending", detail: "等待中" },
 ];
 
 const transcriptContent = [
@@ -48,6 +48,7 @@ const makeLecture = (
   lecture: Omit<LectureDetail, "transcript" | "summary" | "qaRules">,
 ): LectureDetail => ({
   ...lecture,
+  isRemote: false,
   transcript: makeTranscript(lecture.id, lecture.timestampMs),
   summary: {
     overview: "本节比较正弦位置编码与旋转位置编码（RoPE），重点解释两者注入位置信息的方式，以及 RoPE 对相对位置建模和长序列外推的影响。",

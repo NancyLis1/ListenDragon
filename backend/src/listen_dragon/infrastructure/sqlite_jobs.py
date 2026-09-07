@@ -22,6 +22,9 @@ class StoredVideo:
     source_path: Path
     state: JobState
     progress: int
+    duration_ms: int | None
+    created_at: datetime
+    error_code: str | None
 
 
 def sqlite_path_from_url(database_url: str) -> Path:
@@ -176,6 +179,30 @@ class SqliteJobRepository:
             progress=row["progress"],
             error_code=row["error_code"],
         )
+
+    def list_videos(self) -> list[StoredVideo]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT v.id
+                FROM video AS v
+                JOIN processing_job AS j ON j.video_id = v.id
+                WHERE v.deleted_at IS NULL
+                ORDER BY v.created_at DESC, v.id DESC
+                """
+            ).fetchall()
+        return [video for row in rows if (video := self.get_stored_video(UUID(row["id"]))) is not None]
+
+    def set_video_duration(self, video_id: UUID, duration_ms: int) -> None:
+        if duration_ms <= 0:
+            raise ValueError("Video duration must be positive")
+        with self._connect() as connection:
+            cursor = connection.execute(
+                "UPDATE video SET duration_ms = ? WHERE id = ? AND deleted_at IS NULL",
+                (duration_ms, str(video_id)),
+            )
+            if cursor.rowcount != 1:
+                raise KeyError(f"Unknown video: {video_id}")
 
     def claim_audio_extraction(
         self,
@@ -424,7 +451,7 @@ class SqliteJobRepository:
             row = connection.execute(
                 """
                 SELECT v.id, v.original_name, v.mime, v.size_bytes, v.sha256, v.source_path,
-                       j.state, j.progress
+                       v.duration_ms, v.created_at, j.state, j.progress, j.error_code
                 FROM video AS v
                 JOIN processing_job AS j ON j.video_id = v.id
                 WHERE v.id = ? AND v.deleted_at IS NULL
@@ -442,6 +469,9 @@ class SqliteJobRepository:
             source_path=Path(row["source_path"]),
             state=JobState(row["state"]),
             progress=row["progress"],
+            duration_ms=row["duration_ms"],
+            created_at=datetime.fromisoformat(row["created_at"]),
+            error_code=row["error_code"],
         )
 
     @contextmanager

@@ -133,7 +133,10 @@ class HybridIndexBuilder:
         if array_factory is None:
             import numpy as np
 
-            array_factory = lambda values: np.asarray(values, dtype="float32")
+            def as_float32_array(values: Any) -> Any:
+                return np.asarray(values, dtype="float32")
+
+            array_factory = as_float32_array
         if index_factory is None or index_writer is None:
             import faiss
 

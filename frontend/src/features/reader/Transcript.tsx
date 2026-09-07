@@ -12,7 +12,7 @@ interface TranscriptProps {
 
 export function Transcript({ segments, currentTimeMs, onSeek }: TranscriptProps) {
   const [noteOpen, setNoteOpen] = useState(false);
-  const [note, setNote] = useState("重要：RoPE 通过旋转查询和键来表达相对位置。");
+  const [note, setNote] = useState("");
   const activeId = useMemo(() => {
     const exact = segments.find((item) => currentTimeMs >= item.startMs && currentTimeMs < item.endMs);
     if (exact) return exact.id;

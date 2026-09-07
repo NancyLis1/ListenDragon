@@ -16,9 +16,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -e "./backend[dev]"
+      - run: pip install -r backend/requirements-dev.lock
+      - run: pip install -e ./backend --no-deps
       - run: ruff check backend
       - run: pytest backend/tests
+      - run: pip check
 
   frontend:
     runs-on: ubuntu-latest

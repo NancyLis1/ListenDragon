@@ -5,10 +5,19 @@ from pathlib import Path
 from typing import Annotated
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, UploadFile, status
+from fastapi.responses import FileResponse
 
+from listen_dragon.api.errors import mapped_api_error
 from listen_dragon.core.config import Settings, get_settings
-from listen_dragon.domain.models import VideoJobAccepted, VideoJobView
+from listen_dragon.domain.models import (
+    JobState,
+    TranscriptSegmentView,
+    TranscriptView,
+    VideoJobAccepted,
+    VideoListView,
+    VideoView,
+)
 from listen_dragon.infrastructure.sqlite_jobs import SqliteJobRepository, sqlite_path_from_url
 
 router = APIRouter(prefix="/videos", tags=["videos"])
@@ -39,10 +48,7 @@ async def upload_video(
     suffix = Path(file.filename or "").suffix.lower()
     expected_media_type = _ALLOWED_MEDIA_TYPES.get(suffix)
     if expected_media_type is None or file.content_type != expected_media_type:
-        raise HTTPException(
-            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail="Unsupported video extension or media type",
-        )
+        raise mapped_api_error("UNSUPPORTED_MEDIA_TYPE")
 
     video_id = uuid4()
     video_dir = Path(settings.data_root) / "uploads" / str(video_id)
@@ -58,18 +64,12 @@ async def upload_video(
             while chunk := await file.read(_UPLOAD_CHUNK_BYTES):
                 size_bytes += len(chunk)
                 if size_bytes > max_upload_bytes:
-                    raise HTTPException(
-                        status_code=status.HTTP_413_CONTENT_TOO_LARGE,
-                        detail=f"Video exceeds the {settings.max_upload_mb} MB upload limit",
-                    )
+                    raise mapped_api_error("UPLOAD_TOO_LARGE")
                 digest.update(chunk)
                 destination.write(chunk)
 
         if size_bytes == 0:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-                detail="Uploaded video is empty",
-            )
+            raise mapped_api_error("UPLOAD_EMPTY")
 
         temporary_path.replace(source_path)
         job = repository.create_video_job(
@@ -94,12 +94,79 @@ async def upload_video(
         await file.close()
 
 
-@router.get("/{video_id}", response_model=VideoJobView)
+def _video_view(video) -> VideoView:
+    return VideoView(
+        video_id=video.video_id,
+        original_name=video.original_name,
+        mime=video.mime,
+        size_bytes=video.size_bytes,
+        duration_ms=video.duration_ms,
+        created_at=video.created_at,
+        state=video.state,
+        progress=video.progress,
+        error_code=video.error_code,
+    )
+
+
+@router.get("", response_model=VideoListView)
+def list_videos(
+    repository: Annotated[SqliteJobRepository, Depends(get_job_repository)],
+) -> VideoListView:
+    return VideoListView(items=[_video_view(item) for item in repository.list_videos()])
+
+
+@router.get("/{video_id}", response_model=VideoView)
 def get_video(
     video_id: UUID,
     repository: Annotated[SqliteJobRepository, Depends(get_job_repository)],
-) -> VideoJobView:
-    job = repository.get_video_job(video_id)
-    if job is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Video not found")
-    return job
+) -> VideoView:
+    video = repository.get_stored_video(video_id)
+    if video is None:
+        raise mapped_api_error("VIDEO_NOT_FOUND")
+    return _video_view(video)
+
+
+@router.get("/{video_id}/transcript", response_model=TranscriptView)
+def get_transcript(
+    video_id: UUID,
+    repository: Annotated[SqliteJobRepository, Depends(get_job_repository)],
+) -> TranscriptView:
+    video = repository.get_stored_video(video_id)
+    if video is None:
+        raise mapped_api_error("VIDEO_NOT_FOUND")
+    if video.state is not JobState.ready:
+        raise mapped_api_error("VIDEO_NOT_READY")
+    segments = repository.list_transcript_segments(video_id)
+    return TranscriptView(
+        video_id=video_id,
+        segments=[
+            TranscriptSegmentView(seq=seq, **segment.__dict__)
+            for seq, segment in enumerate(segments)
+        ],
+    )
+
+
+@router.get("/{video_id}/content", response_class=FileResponse)
+def get_video_content(
+    video_id: UUID,
+    settings: Annotated[Settings, Depends(get_settings)],
+    repository: Annotated[SqliteJobRepository, Depends(get_job_repository)],
+) -> FileResponse:
+    video = repository.get_stored_video(video_id)
+    if video is None:
+        raise mapped_api_error("VIDEO_NOT_FOUND")
+    uploads_root = (Path(settings.data_root) / "uploads").resolve()
+    source_path = video.source_path
+    source = source_path.resolve()
+    if (
+        not source.is_relative_to(uploads_root)
+        or source_path.is_symlink()
+        or not source.is_file()
+    ):
+        raise mapped_api_error("VIDEO_FILE_NOT_FOUND")
+    return FileResponse(
+        source,
+        media_type=video.mime,
+        filename=video.original_name,
+        content_disposition_type="inline",
+    )

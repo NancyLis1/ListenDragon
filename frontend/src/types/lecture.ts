@@ -1,6 +1,6 @@
 export type AppView = "upload" | "search" | "reader";
 
-export type ProcessingState = "complete" | "working" | "pending";
+export type ProcessingState = "complete" | "working" | "pending" | "failed";
 
 export interface ProcessingStep {
   id: string;
@@ -56,9 +56,11 @@ export interface LectureDetail extends Lecture {
   qaRules: DemoQaRule[];
   videoUrl?: string;
   isDemoUpload?: boolean;
+  isRemote?: boolean;
 }
 
 export interface LectureSearchResult {
+  resultId?: string;
   lecture: LectureDetail;
   timestampMs: number;
   timeRange: string;
@@ -71,6 +73,7 @@ export interface ChatMessage {
   content: string;
   time: string;
   citationMs?: number;
+  citations?: Array<{ chunkId: string; startMs: number; endMs: number; text: string }>;
 }
 
 export interface SeekRequest {

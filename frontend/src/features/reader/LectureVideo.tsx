@@ -120,7 +120,7 @@ export function LectureVideo({ lecture, seekRequest, onTimeChange }: LectureVide
           />
         </label>
         <button type="button" className="playback-rate" onClick={cyclePlaybackRate} aria-label="切换播放速度">{playbackRate}×</button>
-        <button type="button" aria-label="字幕不可用" disabled title="演示模式暂不提供字幕轨道"><Icon name="captions" /></button>
+        <button type="button" aria-label="字幕不可用" disabled title="暂不提供字幕轨道"><Icon name="captions" /></button>
         <button type="button" onClick={enterFullscreen} aria-label="全屏"><Icon name="expand" /></button>
       </div>
     </section>

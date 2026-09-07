@@ -110,7 +110,8 @@ def process_next_job(
     audio_path = data_root / "artifacts" / str(video.video_id) / "audio.wav"
     logger.info("audio_extraction_started video_id=%s", video.video_id)
     try:
-        extractor.extract_audio(video.source_path, audio_path)
+        extracted = extractor.extract_audio(video.source_path, audio_path)
+        repository.set_video_duration(video.video_id, extracted.duration_ms)
         repository.update_job(video.video_id, state=JobState.transcribing, progress=30)
         logger.info("audio_extraction_finished video_id=%s", video.video_id)
     except MediaProcessingError as exc:

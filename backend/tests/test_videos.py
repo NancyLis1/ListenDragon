@@ -7,8 +7,10 @@ import pytest
 
 from listen_dragon.api.videos import get_job_repository
 from listen_dragon.core.config import Settings, get_settings
+from listen_dragon.domain.models import JobState
 from listen_dragon.infrastructure.sqlite_jobs import SqliteJobRepository
 from listen_dragon.main import app
+from listen_dragon.services.contracts import TranscriptSegment
 
 
 @pytest.fixture
@@ -67,6 +69,11 @@ async def test_get_video_returns_persisted_status(upload_context) -> None:
     assert response.status_code == 200
     assert response.json() == {
         "video_id": upload.json()["video_id"],
+        "original_name": "lesson.webm",
+        "mime": "video/webm",
+        "size_bytes": 5,
+        "duration_ms": None,
+        "created_at": response.json()["created_at"],
         "state": "QUEUED",
         "progress": 0,
         "error_code": None,
@@ -127,3 +134,49 @@ async def test_get_video_returns_404_for_unknown_id(upload_context) -> None:
         response = await client.get(f"/api/v1/videos/{uuid4()}")
 
     assert response.status_code == 404
+    assert response.json()["error_code"] == "VIDEO_NOT_FOUND"
+
+
+@pytest.mark.asyncio
+async def test_list_transcript_and_range_content(upload_context) -> None:
+    _settings, repository = upload_context
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        upload = await client.post(
+            "/api/v1/videos",
+            files={"file": ("lesson.mp4", b"0123456789", "video/mp4")},
+        )
+        video_id = UUID(upload.json()["video_id"])
+        repository.set_video_duration(video_id, 12_500)
+        repository.replace_transcript_segments(
+            video_id, [TranscriptSegment(1000, 2500, "真实转写", "zh")]
+        )
+        repository.update_job(video_id, state=JobState.ready, progress=100)
+
+        listing = await client.get("/api/v1/videos")
+        transcript = await client.get(f"/api/v1/videos/{video_id}/transcript")
+        content = await client.get(
+            f"/api/v1/videos/{video_id}/content", headers={"Range": "bytes=2-5"}
+        )
+
+    assert listing.json()["items"][0]["duration_ms"] == 12_500
+    assert transcript.json()["segments"] == [{
+        "seq": 0, "start_ms": 1000, "end_ms": 2500, "text": "真实转写", "language": "zh"
+    }]
+    assert content.status_code == 206
+    assert content.content == b"2345"
+    assert content.headers["content-range"] == "bytes 2-5/10"
+
+
+@pytest.mark.asyncio
+async def test_transcript_requires_ready_video(upload_context) -> None:
+    _settings, _repository = upload_context
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        upload = await client.post(
+            "/api/v1/videos", files={"file": ("lesson.mp4", b"video", "video/mp4")}
+        )
+        response = await client.get(f"/api/v1/videos/{upload.json()['video_id']}/transcript")
+
+    assert response.status_code == 409
+    assert response.json()["error_code"] == "VIDEO_NOT_READY"
