@@ -7,6 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Request, status
 from starlette.concurrency import run_in_threadpool
 
+from listen_dragon.api.dependencies import get_retriever
 from listen_dragon.api.errors import mapped_api_error
 from listen_dragon.core.config import Settings, get_settings
 from listen_dragon.domain.models import (
@@ -25,7 +26,7 @@ from listen_dragon.services.grounded_generation import (
     build_generation_service,
 )
 from listen_dragon.services.llm_generation import GenerationError, OpenAITextGenerator
-from listen_dragon.services.retrieval import RetrievalError, build_retriever
+from listen_dragon.services.retrieval import LocalHybridRetriever, RetrievalError
 
 router = APIRouter(tags=["generation"])
 _SERVICE_LOCK = threading.Lock()
@@ -34,6 +35,7 @@ _SERVICE_LOCK = threading.Lock()
 def get_generation_service(
     request: Request,
     settings: Annotated[Settings, Depends(get_settings)],
+    retriever: Annotated[LocalHybridRetriever, Depends(get_retriever)],
 ) -> GroundedGenerationService:
     cache_key = (
         settings.database_url,
@@ -70,7 +72,7 @@ def get_generation_service(
                 request.app.state.generation_service = build_generation_service(
                     jobs=jobs,
                     conversations=conversations,
-                    retriever=build_retriever(settings),
+                    retriever=retriever,
                     generator=generator,
                     context_chars=settings.generation_context_chars,
                     memory_chars=settings.conversation_memory_chars,

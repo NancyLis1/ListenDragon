@@ -125,6 +125,28 @@ def test_multiquery_expansion_is_consumed(published):
     assert report.chunks[0].chunk_id == "first-2"
 
 
+def test_search_many_expands_and_encodes_query_once(published):
+    retriever, first, second, _ = published
+    calls = {"expand": 0, "encode": 0}
+
+    class Expander:
+        def expand(self, query):
+            calls["expand"] += 1
+            return ExpandedQueries((query, "课题分离"))
+
+    class CountingEncoder:
+        def encode(self, texts, **kwargs):
+            calls["encode"] += 1
+            return [[1.0, 0.0] for _ in texts]
+
+    retriever.expander = Expander()
+    retriever._model = CountingEncoder()
+    reports = retriever.search_many([str(first[0]), str(second[0])], "谁负责")
+
+    assert len(reports) == 2
+    assert calls == {"expand": 1, "encode": 1}
+
+
 @pytest.mark.parametrize("query,limit", [("", 6), ("x" * 1001, 6), ("q", 0), ("q", True)])
 def test_invalid_requests(published, query, limit):
     retriever, first, _, _ = published

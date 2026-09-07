@@ -100,11 +100,64 @@ class LocalHybridRetriever:
         }:
             raise RetrievalError("INVALID_QUERY")
 
+        self._require_ready(identifier)
+        expanded, embeddings = self._prepare_query(original, mode)
+        return self._search_prepared(
+            identifier, expanded, embeddings, limit=limit, mode=mode, started=started
+        )
+
+    def search_many(
+        self,
+        video_ids: Sequence[str],
+        query: str,
+        *,
+        limit_per_video: int = 6,
+        mode: RetrievalMode = "multi",
+    ) -> tuple[SearchReport, ...]:
+        try:
+            identifiers = tuple(UUID(item) for item in dict.fromkeys(video_ids))
+            original = normalize_query(query)
+        except (ValueError, TypeError, AttributeError) as exc:
+            raise RetrievalError("INVALID_QUERY") from exc
+        if not identifiers or len(identifiers) > 50 or not 1 <= limit_per_video <= 50:
+            raise RetrievalError("INVALID_QUERY")
+        for identifier in identifiers:
+            self._require_ready(identifier)
+        expanded, embeddings = self._prepare_query(original, mode)
+        return tuple(
+            self._search_prepared(
+                identifier,
+                expanded,
+                embeddings,
+                limit=limit_per_video,
+                mode=mode,
+                started=time.perf_counter(),
+            )
+            for identifier in identifiers
+        )
+
+    def _prepare_query(self, original: str, mode: RetrievalMode) -> tuple[ExpandedQueries, Any]:
+        if mode not in {"vector", "hybrid", "multi"}:
+            raise RetrievalError("INVALID_QUERY")
+        expanded = ExpandedQueries((original,), "disabled")
+        if mode == "multi" and self.expander is not None:
+            expanded = self.expander.expand(original)
+        return expanded, self._encode(expanded.queries)
+
+    def _search_prepared(
+        self,
+        identifier: UUID,
+        expanded: ExpandedQueries,
+        embeddings: Any,
+        *,
+        limit: int,
+        mode: RetrievalMode,
+        started: float,
+    ) -> SearchReport:
+        self._require_ready(identifier)
         job = self.repository.get_video_job(identifier)
-        if job is None:
-            raise RetrievalError("VIDEO_NOT_FOUND")
-        if job.state is not JobState.ready:
-            raise RetrievalError("VIDEO_NOT_READY")
+        assert job is not None
+
         try:
             version = self.repository.get_chunk_index_version(identifier)
         except ValueError as exc:
@@ -113,10 +166,6 @@ class LocalHybridRetriever:
             raise RetrievalError("INDEX_NOT_FOUND")
 
         chunks, vector_index, bm25 = self._load_index(identifier, version)
-        expanded = ExpandedQueries((original,), "disabled")
-        if mode == "multi" and self.expander is not None:
-            expanded = self.expander.expand(original)
-        embeddings = self._encode(expanded.queries)
         if embeddings.ndim != 2 or embeddings.shape[1] != vector_index.d:
             raise RetrievalError("EMBEDDING_DIMENSION_MISMATCH")
         rankings: list[list[str]] = []
@@ -173,6 +222,13 @@ class LocalHybridRetriever:
         return SearchReport(
             str(identifier), version, expanded.queries, results, expanded.fallback_reason, elapsed,
         )
+
+    def _require_ready(self, identifier: UUID) -> None:
+        job = self.repository.get_video_job(identifier)
+        if job is None:
+            raise RetrievalError("VIDEO_NOT_FOUND")
+        if job.state is not JobState.ready:
+            raise RetrievalError("VIDEO_NOT_READY")
 
     def _load_index(self, video_id: UUID, version: str) -> tuple[list[DocumentChunk], Any, Any]:
         if not re.fullmatch(r"[0-9a-f]{16}", version):

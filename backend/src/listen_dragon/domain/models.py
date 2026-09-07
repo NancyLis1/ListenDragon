@@ -28,6 +28,53 @@ class VideoJobView(BaseModel):
     error_code: str | None = None
 
 
+class VideoView(VideoJobView):
+    original_name: str
+    mime: str
+    size_bytes: int = Field(ge=0)
+    duration_ms: int | None = Field(default=None, gt=0)
+    created_at: datetime
+
+
+class VideoListView(BaseModel):
+    items: list[VideoView]
+
+
+class TranscriptSegmentView(BaseModel):
+    seq: int = Field(ge=0)
+    start_ms: int = Field(ge=0)
+    end_ms: int = Field(gt=0)
+    text: str
+    language: str
+
+
+class TranscriptView(BaseModel):
+    video_id: UUID
+    segments: list[TranscriptSegmentView]
+
+
+class SearchRequest(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    query: str = Field(min_length=1, max_length=1000)
+    video_ids: list[UUID] = Field(min_length=1, max_length=50)
+    limit: int = Field(default=20, ge=1, le=50)
+
+
+class SearchResultView(BaseModel):
+    video_id: UUID
+    original_name: str
+    chunk_id: str
+    start_ms: int = Field(ge=0)
+    end_ms: int = Field(gt=0)
+    text: str
+    score: float
+
+
+class SearchView(BaseModel):
+    results: list[SearchResultView]
+
+
 class SummaryLanguage(StrEnum):
     auto = "auto"
     chinese = "zh-CN"

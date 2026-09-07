@@ -30,8 +30,14 @@ class DocumentChunk:
     token_count: int
 
 
+@dataclass(frozen=True)
+class ExtractedMedia:
+    audio_path: Path
+    duration_ms: int
+
+
 class MediaExtractor(Protocol):
-    def extract_audio(self, video: Path, output: Path) -> Path: ...
+    def extract_audio(self, video: Path, output: Path) -> ExtractedMedia: ...
 
 
 class SpeechRecognizer(Protocol):
