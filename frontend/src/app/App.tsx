@@ -1,12 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { AppSidebar } from "../components/AppSidebar";
 import { lectures } from "../data/mockLectures";
 import { ReaderPage } from "../features/reader/ReaderPage";
 import { SearchPage } from "../features/search/SearchPage";
 import { UploadPage } from "../features/upload/UploadPage";
-import { useBackendStatus } from "../hooks/useBackendStatus";
-import type { AppView } from "../types/lecture";
+import type { AppView, LectureDetail } from "../types/lecture";
 
 const viewFromHash = (): AppView => {
   const view = window.location.hash.slice(1);
@@ -15,16 +14,20 @@ const viewFromHash = (): AppView => {
 
 export default function App() {
   const [currentView, setCurrentView] = useState<AppView>(viewFromHash);
-  const [courseLibrary] = useState(lectures);
+  const [courseLibrary, setCourseLibrary] = useState(lectures);
   const [activeLectureId, setActiveLectureId] = useState(lectures[0].id);
   const [readerStartMs, setReaderStartMs] = useState(lectures[0].timestampMs);
-  const backend = useBackendStatus();
+  const sessionVideoUrls = useRef<string[]>([]);
   const activeLecture = courseLibrary.find((lecture) => lecture.id === activeLectureId) ?? courseLibrary[0];
 
   useEffect(() => {
     const syncView = () => setCurrentView(viewFromHash());
     window.addEventListener("hashchange", syncView);
     return () => window.removeEventListener("hashchange", syncView);
+  }, []);
+
+  useEffect(() => () => {
+    sessionVideoUrls.current.forEach((url) => URL.revokeObjectURL(url));
   }, []);
 
   const navigate = (view: AppView) => {
@@ -37,10 +40,16 @@ export default function App() {
     navigate("reader");
   };
 
+  const addUploadedLecture = (lecture: LectureDetail) => {
+    if (lecture.videoUrl) sessionVideoUrls.current.push(lecture.videoUrl);
+    setCourseLibrary((current) => [lecture, ...current]);
+    openLecture(lecture.id, 0);
+  };
+
   return (
     <div className="application-shell">
       <AppSidebar currentView={currentView} onNavigate={navigate} />
-      {currentView === "upload" && <UploadPage backend={backend} />}
+      {currentView === "upload" && <UploadPage onComplete={addUploadedLecture} />}
       {currentView === "search" && <SearchPage lectures={courseLibrary} onOpenLecture={openLecture} />}
       {currentView === "reader" && <ReaderPage lecture={activeLecture} initialTimeMs={readerStartMs} />}
     </div>

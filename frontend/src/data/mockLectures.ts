@@ -1,11 +1,11 @@
 import type { ChatMessage, LectureDetail, ProcessingStep, TranscriptSegment } from "../types/lecture";
 
 export const processingSteps: ProcessingStep[] = [
-  { id: "upload", title: "文件上传完成", description: "lecture-05-introduction.mp4 · 1.2 GB", state: "complete", detail: "刚刚" },
-  { id: "transcript", title: "转写已就绪", description: "已完成自动语音识别", state: "complete", detail: "刚刚" },
-  { id: "slides", title: "幻灯片识别中", description: "正在从幻灯片提取文字", state: "working", detail: "45%" },
-  { id: "index", title: "检索索引构建", description: "正在为快速检索准备内容", state: "pending", detail: "等待中" },
-  { id: "summary", title: "摘要待生成", description: "正在生成课程要点", state: "pending", detail: "等待中" },
+  { id: "upload", title: "准备视频文件", description: "等待选择本地视频", state: "pending", detail: "等待中" },
+  { id: "transcript", title: "生成演示转写", description: "准备带时间戳的示例内容", state: "pending", detail: "等待中" },
+  { id: "slides", title: "模拟幻灯片识别", description: "展示处理阶段变化", state: "pending", detail: "等待中" },
+  { id: "index", title: "构建会话检索", description: "让课程可在当前会话中搜索", state: "pending", detail: "等待中" },
+  { id: "summary", title: "生成演示摘要", description: "准备概览、要点和章节", state: "pending", detail: "等待中" },
 ];
 
 const transcriptContent = [
