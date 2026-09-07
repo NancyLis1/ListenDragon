@@ -23,6 +23,8 @@ ai = [
   "rank-bm25>=0.2.2,<1.0",
 ]
 dev = [
+  "coverage>=7.6,<8.0",
+  "numpy>=1.26,<3.0",
   "pytest>=8.3,<10.0",
   "pytest-asyncio>=0.25,<2.0",
   "ruff>=0.9,<1.0",

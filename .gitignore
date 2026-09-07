@@ -1,4 +1,6 @@
 .env
+.env.*
+!.env.example
 .venv/
 __pycache__/
 *.py[cod]
@@ -19,6 +21,8 @@ data/artifacts/*
 data/indexes/*
 data/models/*
 data/*.db
+data/*.db-wal
+data/*.db-shm
 !data/uploads/.gitkeep
 !data/artifacts/.gitkeep
 !data/indexes/.gitkeep

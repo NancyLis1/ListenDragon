@@ -395,6 +395,19 @@ class SqliteJobRepository:
             for row in rows
         ]
 
+    def get_chunk_index_version(self, video_id: UUID) -> str | None:
+        """Return the one published version; never guess a directory from its mtime."""
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT DISTINCT index_version FROM document_chunk WHERE video_id = ?",
+                (str(video_id),),
+            ).fetchall()
+        if not rows:
+            return None
+        if len(rows) != 1 or not rows[0]["index_version"]:
+            raise ValueError("Chunks do not reference one published index version")
+        return rows[0]["index_version"]
+
     def set_chunk_index_version(self, video_id: UUID, index_version: str) -> None:
         with self._connect() as connection:
             connection.execute(
