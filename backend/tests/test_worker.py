@@ -1,11 +1,15 @@
 from pathlib import Path
 from uuid import UUID, uuid4
 
-from listen_dragon.domain.models import JobState
+import pytest
+
+from listen_dragon.domain.models import JobState, VisualObservation
+from listen_dragon.infrastructure.asr import TranscriptionError
 from listen_dragon.infrastructure.media import MediaProcessingError
 from listen_dragon.infrastructure.sqlite_jobs import SqliteJobRepository
 from listen_dragon.services.chunking import SemanticChunker
 from listen_dragon.services.contracts import DocumentChunk, ExtractedMedia, TranscriptSegment
+from listen_dragon.services.llm_generation import GenerationError
 from listen_dragon.worker import process_next_job
 
 
@@ -20,6 +24,54 @@ class SuccessfulExtractor:
 class FailingExtractor:
     def extract_audio(self, video: Path, output: Path) -> ExtractedMedia:
         raise MediaProcessingError("INVALID_MEDIA", "not a real video")
+
+
+class VisualAnalyzer:
+    def analyze(self, video, duration_ms, output):
+        return [VisualObservation(timestamp_ms=1000, text="桌上可见打开的西瓜。")]
+
+
+@pytest.mark.parametrize("audio_mode", ["speech", "empty", "no_audio_track"])
+def test_visual_pipeline_preserves_speech_and_supports_silent_video(tmp_path, audio_mode):
+    repository, data_root, video_id = create_job(tmp_path)
+    dependencies = worker_dependencies()
+    extractor = SuccessfulExtractor()
+    if audio_mode == "empty":
+        class EmptyRecognizer:
+            def transcribe(self, audio):
+                raise TranscriptionError("ASR_EMPTY", "empty")
+        dependencies["recognizer"] = EmptyRecognizer()
+    if audio_mode == "no_audio_track":
+        class NoAudioExtractor:
+            def extract_audio(self, video, output):
+                raise MediaProcessingError("FFMPEG_FAILED", "no audio", 12500)
+        extractor = NoAudioExtractor()
+    for _ in range(5):
+        process_next_job(repository=repository, extractor=extractor, **dependencies,
+                         visual_analyzer=VisualAnalyzer(), data_root=data_root,
+                         worker_id="test", lease_seconds=60)
+    assert repository.get_video_job(video_id).state is JobState.ready
+    analysis = repository.get_visual_analysis(video_id)
+    assert analysis.status == "ready"
+    assert bool(analysis.audio_warning) == (audio_mode != "speech")
+    assert any(c.chunk_id.startswith("visual:") for c in repository.list_chunks(video_id))
+    transcript = repository.list_transcript_segments(video_id)
+    assert bool(transcript) == (audio_mode == "speech")
+    assert all("西瓜" not in item.text for item in transcript)
+
+
+def test_visual_failure_is_explicit_and_retains_usable_speech(tmp_path):
+    repository, data_root, video_id = create_job(tmp_path)
+    class FailingVision:
+        def analyze(self, *args):
+            raise GenerationError("LLM_UNAVAILABLE")
+    for _ in range(5):
+        process_next_job(repository=repository, extractor=SuccessfulExtractor(),
+                         **worker_dependencies(), visual_analyzer=FailingVision(),
+                         data_root=data_root, worker_id="test", lease_seconds=60)
+    assert repository.get_video_job(video_id).state is JobState.ready
+    assert repository.get_visual_analysis(video_id).error_code == "LLM_UNAVAILABLE"
+    assert not any(c.chunk_id.startswith("visual:") for c in repository.list_chunks(video_id))
 
 
 class SuccessfulRecognizer:
@@ -71,6 +123,19 @@ def create_job(tmp_path: Path) -> tuple[SqliteJobRepository, Path, UUID]:
         source_path=source,
     )
     return repository, data_root, video_id
+
+
+def test_targeted_worker_cannot_claim_another_video(tmp_path):
+    repository, data_root, video_id = create_job(tmp_path)
+    assert not process_next_job(repository=repository, extractor=SuccessfulExtractor(),
+                                **worker_dependencies(), visual_analyzer=VisualAnalyzer(),
+                                data_root=data_root, worker_id="test", lease_seconds=60,
+                                target_video_id=uuid4())
+    assert repository.get_video_job(video_id).state is JobState.queued
+    for stage in (JobState.visualizing, JobState.chunking, JobState.indexing):
+        repository.update_job(video_id, state=stage, progress=45)
+        assert repository.claim_stage(stage, worker_id="test", lease_seconds=60,
+                                      target_video_id=uuid4()) is None
 
 
 def test_worker_extracts_audio_and_advances_job(tmp_path: Path) -> None:

@@ -75,7 +75,7 @@ describe("UploadPage", () => {
     await waitFor(() => expect(onComplete).toHaveBeenCalledWith(readyVideo));
     expect(uploadVideo).toHaveBeenCalledWith(file, expect.any(AbortSignal));
     expect(getVideo).toHaveBeenCalledWith(readyVideo.video_id, expect.any(AbortSignal));
-    expect(screen.getAllByText("已完成")).toHaveLength(5);
+    expect(screen.getAllByText("已完成")).toHaveLength(6);
   });
 
   it("polls until a queued job becomes ready", async () => {

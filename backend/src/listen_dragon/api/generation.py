@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import threading
+from pathlib import Path
 from typing import Annotated
 from uuid import UUID
 
@@ -21,6 +22,7 @@ from listen_dragon.domain.models import (
 )
 from listen_dragon.infrastructure.sqlite_conversations import SqliteConversationRepository
 from listen_dragon.infrastructure.sqlite_jobs import SqliteJobRepository, sqlite_path_from_url
+from listen_dragon.infrastructure.vision import FrameAnalyzer
 from listen_dragon.services.grounded_generation import (
     GroundedGenerationService,
     ServiceError,
@@ -53,6 +55,8 @@ def get_generation_service(
         settings.query_expansion_timeout_seconds,
         settings.generation_context_chars,
         settings.conversation_memory_chars,
+        settings.vision_enabled, settings.vision_model, settings.ffmpeg_binary,
+        settings.vision_max_frames, settings.vision_short_video_seconds, settings.vision_interval_seconds,
     )
     if getattr(request.app.state, "generation_service_key", None) != cache_key:
         with _SERVICE_LOCK:
@@ -77,6 +81,15 @@ def get_generation_service(
                     generator=generator,
                     context_chars=settings.generation_context_chars,
                     memory_chars=settings.conversation_memory_chars,
+                    visual_reader=FrameAnalyzer(OpenAITextGenerator(
+                        base_url=settings.llm_base_url, api_key=settings.llm_api_key,
+                        model=settings.vision_model or settings.llm_model,
+                        timeout_seconds=max(60, settings.llm_timeout_seconds),
+                    ), ffmpeg_binary=settings.ffmpeg_binary,
+                        interval_seconds=settings.vision_interval_seconds,
+                        max_frames=settings.vision_max_frames) if settings.vision_enabled else None,
+                    data_root=Path(settings.data_root),
+                    short_video_ms=round(settings.vision_short_video_seconds * 1000),
                 )
                 request.app.state.generation_service_key = cache_key
     return request.app.state.generation_service

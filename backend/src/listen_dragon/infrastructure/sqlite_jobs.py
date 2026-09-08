@@ -8,7 +8,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import UUID, uuid4
 
-from listen_dragon.domain.models import JobState, VideoJobView
+from listen_dragon.domain.models import JobState, VideoJobView, VisualAnalysisView
 from listen_dragon.services.contracts import DocumentChunk, TranscriptSegment
 
 
@@ -108,8 +108,52 @@ class SqliteJobRepository:
                     ON transcript_segment(video_id, seq);
                 CREATE INDEX IF NOT EXISTS ix_document_chunk_video
                     ON document_chunk(video_id, start_ms);
+                CREATE TABLE IF NOT EXISTS visual_analysis (
+                    video_id TEXT PRIMARY KEY REFERENCES video(id),
+                    payload TEXT NOT NULL
+                );
                 """
             )
+
+    def get_visual_analysis(self, video_id: UUID) -> VisualAnalysisView:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT payload FROM visual_analysis WHERE video_id = ?", (str(video_id),)
+            ).fetchone()
+        return VisualAnalysisView.model_validate_json(row["payload"]) if row else VisualAnalysisView()
+
+    def save_visual_analysis(self, video_id: UUID, analysis: VisualAnalysisView) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                "INSERT INTO visual_analysis(video_id, payload) VALUES (?, ?) "
+                "ON CONFLICT(video_id) DO UPDATE SET payload=excluded.payload",
+                (str(video_id), analysis.model_dump_json()),
+            )
+
+    def queue_visual_analysis(self, video_id: UUID) -> bool:
+        """Atomically stop serving the old index while a READY video is reprocessed."""
+        with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            cursor = connection.execute(
+                "UPDATE processing_job SET state=?, stage=?, progress=45, lease_owner=NULL, "
+                "lease_until=NULL, error_code=NULL, updated_at=? WHERE video_id=? AND state IN (?, ?)",
+                (JobState.visualizing.value, JobState.visualizing.value,
+                 datetime.now(UTC).isoformat(), str(video_id), JobState.ready.value, JobState.failed.value),
+            )
+            if cursor.rowcount != 1:
+                return False
+            connection.execute("UPDATE video SET status=? WHERE id=?",
+                               (JobState.visualizing.value, str(video_id)))
+            prior = connection.execute(
+                "SELECT payload FROM visual_analysis WHERE video_id=?", (str(video_id),)
+            ).fetchone()
+            audio_warning = VisualAnalysisView.model_validate_json(prior["payload"]).audio_warning if prior else None
+            connection.execute(
+                "INSERT INTO visual_analysis(video_id, payload) VALUES (?, ?) "
+                "ON CONFLICT(video_id) DO UPDATE SET payload=excluded.payload",
+                (str(video_id), VisualAnalysisView(status="pending", audio_warning=audio_warning).model_dump_json()),
+            )
+        return True
 
     def create_video_job(
         self,
@@ -209,6 +253,7 @@ class SqliteJobRepository:
         *,
         worker_id: str,
         lease_seconds: int,
+        target_video_id: UUID | None = None,
     ) -> StoredVideo | None:
         now = datetime.now(UTC)
         now_text = now.isoformat()
@@ -221,6 +266,7 @@ class SqliteJobRepository:
                 FROM video AS v
                 JOIN processing_job AS j ON j.video_id = v.id
                 WHERE v.deleted_at IS NULL
+                  AND (? IS NULL OR v.id = ?)
                   AND (
                     j.state = ?
                     OR (j.state = ? AND j.lease_until < ?)
@@ -228,7 +274,9 @@ class SqliteJobRepository:
                 ORDER BY j.created_at
                 LIMIT 1
                 """,
-                (JobState.queued.value, JobState.extracting.value, now_text),
+                (str(target_video_id) if target_video_id else None,
+                 str(target_video_id) if target_video_id else None,
+                 JobState.queued.value, JobState.extracting.value, now_text),
             ).fetchone()
             if row is None:
                 return None
@@ -262,8 +310,9 @@ class SqliteJobRepository:
         *,
         worker_id: str,
         lease_seconds: int,
+        target_video_id: UUID | None = None,
     ) -> StoredVideo | None:
-        if state not in {JobState.transcribing, JobState.chunking, JobState.indexing}:
+        if state not in {JobState.transcribing, JobState.visualizing, JobState.chunking, JobState.indexing}:
             raise ValueError(f"Unsupported claimable stage: {state}")
         now = datetime.now(UTC)
         now_text = now.isoformat()
@@ -277,11 +326,13 @@ class SqliteJobRepository:
                 JOIN processing_job AS j ON j.video_id = v.id
                 WHERE v.deleted_at IS NULL
                   AND j.state = ?
+                  AND (? IS NULL OR v.id = ?)
                   AND (j.lease_until IS NULL OR j.lease_until < ?)
                 ORDER BY j.updated_at
                 LIMIT 1
                 """,
-                (state.value, now_text),
+                (state.value, str(target_video_id) if target_video_id else None,
+                 str(target_video_id) if target_video_id else None, now_text),
             ).fetchone()
             if row is None:
                 return None

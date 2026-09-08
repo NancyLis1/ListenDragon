@@ -73,7 +73,7 @@ export interface ChatMessage {
   content: string;
   time: string;
   citationMs?: number;
-  citations?: Array<{ chunkId: string; startMs: number; endMs: number; text: string }>;
+  citations?: Array<{ chunkId: string; startMs: number; endMs: number; text: string; sourceType?: "speech" | "visual" }>;
 }
 
 export interface SeekRequest {

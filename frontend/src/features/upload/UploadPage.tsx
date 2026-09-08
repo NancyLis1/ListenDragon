@@ -29,8 +29,9 @@ const stateStep: Partial<Record<JobState, number>> = {
   QUEUED: 1,
   EXTRACTING: 1,
   TRANSCRIBING: 2,
-  CHUNKING: 3,
-  INDEXING: 4,
+  VISUALIZING: 3,
+  CHUNKING: 4,
+  INDEXING: 5,
 };
 
 export function formatFileSize(bytes: number) {
@@ -77,7 +78,7 @@ export function readVideoDuration(file: File): Promise<number> {
 
 function stepsForJob(file: File | null, job?: ApiVideo): ProcessingStep[] {
   const failedStep = job?.state === "FAILED"
-    ? job.progress <= 10 ? 1 : job.progress <= 30 ? 2 : job.progress <= 55 ? 3 : 4
+    ? job.progress <= 10 ? 1 : job.progress <= 30 ? 2 : job.progress <= 45 ? 3 : job.progress <= 55 ? 4 : 5
     : undefined;
   const active = failedStep ?? (job ? stateStep[job.state] : undefined);
   return processingSteps.map((step, index) => {
@@ -256,7 +257,7 @@ export function UploadPage({ backendStatus, onComplete }: UploadPageProps) {
           <strong>{selectedFile?.name || "尚未选择视频"}</strong>
           <p>{selectedFile ? `${formatFileSize(selectedFile.size)} · ${durationMs > 0 ? formatTimestamp(durationMs) : "时长待校验"}` : "选择文件后显示信息"}</p>
         </section>
-        <section className="info-callout"><Icon name="info" /><p>视频会上传至配置的 ListenDragon 后端，并在处理完成后持久保存。</p></section>
+        <section className="info-callout"><Icon name="info" /><p>视频会保存到 ListenDragon 后端。启用画面分析时，抽样帧会发送给服务端配置的视觉模型；转写片段用于摘要与问答。画面分析为抽样观察，可能遗漏动作。</p></section>
         <p className={`backend-status backend-status--${backendStatus}`}>后端状态：{backendStatus === "online" ? "已连接" : backendStatus === "offline" ? "离线" : "检查中"}</p>
       </aside>
     </main>

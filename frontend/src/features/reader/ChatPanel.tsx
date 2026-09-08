@@ -8,6 +8,7 @@ import type { ChatMessage, LectureDetail } from "../../types/lecture";
 import { formatTimestamp } from "./LectureVideo";
 
 interface ChatPanelProps {
+  disabled?: boolean;
   lecture: LectureDetail;
   onSeek: (timeMs: number) => void;
 }
@@ -21,7 +22,8 @@ export function findDemoAnswer(lecture: LectureDetail, question: string) {
   return lecture.qaRules.find((rule) => rule.keywords.some((keyword) => normalized.includes(keyword.toLowerCase())));
 }
 
-export function ChatPanel({ lecture, onSeek }: ChatPanelProps) {
+export function ChatPanel({ lecture, onSeek, disabled = false }: ChatPanelProps) {
+  const [analysisChanged, setAnalysisChanged] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>(lecture.isRemote ? [] : initialChat);
   const [question, setQuestion] = useState("");
   const [conversationId, setConversationId] = useState<string>();
@@ -42,10 +44,11 @@ export function ChatPanel({ lecture, onSeek }: ChatPanelProps) {
         if (controller.signal.aborted) return;
         if (result.video_id !== lecture.id) throw new Error("保存的会话与当前视频不匹配，请新建会话。");
         setConversationId(result.conversation_id);
+        setAnalysisChanged(Boolean(result.analysis_changed));
         setMessages(result.messages.map((message) => ({
           id: message.message_id, role: message.role, content: message.content,
           time: new Date(message.created_at).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }),
-          citations: message.evidence.map((item) => ({ chunkId: item.chunk_id, startMs: item.start_ms, endMs: item.end_ms, text: item.text })),
+          citations: message.evidence.map((item) => ({ chunkId: item.chunk_id, startMs: item.start_ms, endMs: item.end_ms, text: item.text, sourceType: item.source_type })),
         })));
       }).catch((requestError) => {
         if (controller.signal.aborted) return;
@@ -60,7 +63,7 @@ export function ChatPanel({ lecture, onSeek }: ChatPanelProps) {
   }, [lecture.id, lecture.isRemote, storageKey]);
 
   const newConversation = async () => {
-    if (isSending || isRestoring) return;
+    if (disabled || isSending || isRestoring) return;
     setIsSending(true);
     setError("");
     try {
@@ -70,6 +73,7 @@ export function ChatPanel({ lecture, onSeek }: ChatPanelProps) {
       setConversationId(id);
       setRestoreFailed(false);
       setMessages([]);
+      setAnalysisChanged(false);
       setQuestion("");
     } catch (requestError) {
       if (mounted.current) setError(requestError instanceof Error ? requestError.message : "新建会话失败。");
@@ -79,7 +83,7 @@ export function ChatPanel({ lecture, onSeek }: ChatPanelProps) {
   const submitQuestion = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const content = question.trim();
-    if (!content || isSending || isRestoring || restoreFailed) return;
+    if (disabled || !content || isSending || isRestoring || restoreFailed) return;
     const time = getCurrentTime();
     setMessages((current) => [...current, { id: `question-${Date.now()}`, role: "user", content, time }]);
     setQuestion("");
@@ -110,6 +114,7 @@ export function ChatPanel({ lecture, onSeek }: ChatPanelProps) {
           startMs: item.start_ms,
           endMs: item.end_ms,
           text: item.text,
+          sourceType: item.source_type,
         })),
       }]);
     } catch (requestError) {
@@ -122,10 +127,12 @@ export function ChatPanel({ lecture, onSeek }: ChatPanelProps) {
   return (
     <aside className="chat-panel" aria-label="课程问答">
       <header className="chat-header"><h1>问问这节课</h1><span className="demo-model"><Icon name="sparkles" />{lecture.isRemote ? "有据问答" : "体验问答"}</span></header>
-      {lecture.isRemote && <button type="button" className="outline-button" onClick={() => void newConversation()} disabled={isSending || isRestoring}>新建会话</button>}
+      {lecture.isRemote && <button type="button" className="outline-button" onClick={() => void newConversation()} disabled={disabled || isSending || isRestoring}>新建会话</button>}
+      {analysisChanged && <p className="chat-empty">视频分析已更新，下方历史回答可能基于旧材料。新问题会使用当前分析结果，也可新建会话。</p>}
+      {disabled && <p className="chat-empty">正在完成音画分析，请稍候…</p>}
       {isRestoring && <p className="chat-empty">正在恢复会话…</p>}
       <div className="chat-messages" aria-live="polite">
-        {messages.length === 0 && <p className="chat-empty">{lecture.isRemote ? "问题将基于视频转写回答，并附带可跳转证据。" : "输入问题体验样例问答。"}</p>}
+        {messages.length === 0 && <p className="chat-empty">{lecture.isRemote ? "问题将基于已获取的语音与画面证据回答。查看“画面”页确认分析范围；未分析的画面不作为依据。" : "输入问题体验样例问答。"}</p>}
         {messages.map((message) => (
           <article className={`chat-message chat-message--${message.role}`} key={message.id}>
             <header><strong>{message.role === "user" ? "你" : lecture.isRemote ? "ListenDragon" : "体验 AI"}</strong><time>{message.time}</time></header>
@@ -135,19 +142,21 @@ export function ChatPanel({ lecture, onSeek }: ChatPanelProps) {
                 跳到 {formatTimestamp(message.citationMs)}
               </button>
             )}
-            {message.citations?.map((citation) => (
+            {message.citations?.filter((citation, index, citations) => citations.findIndex((item) =>
+              item.sourceType === citation.sourceType && Math.floor(item.startMs / 1000) === Math.floor(citation.startMs / 1000)
+            ) === index).map((citation) => (
               <button className="chat-citation" type="button" key={citation.chunkId} onClick={() => onSeek(citation.startMs)} title={citation.text}>
-                跳到 {formatTimestamp(citation.startMs)}
+                {citation.sourceType === "visual" ? "画面 · " : ""}跳到 {formatTimestamp(citation.startMs)}
               </button>
             ))}
           </article>
         ))}
       </div>
-      {isSending && <p className="chat-empty">正在检索并核验答案…</p>}
+      {isSending && <p className="chat-empty">正在读取视频证据并核验答案…</p>}
       {error && <p className="chat-empty reader-error" role="alert">{error}</p>}
       <form className="chat-composer" onSubmit={(event) => void submitQuestion(event)}>
-        <input value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="关于这节课提个问题…" aria-label="课程问题" maxLength={1000} disabled={isSending || isRestoring || restoreFailed} />
-        <button type="submit" aria-label="发送问题" disabled={isSending || isRestoring || restoreFailed}><Icon name="send" /></button>
+        <input value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="关于这节课提个问题…" aria-label="课程问题" maxLength={1000} disabled={disabled || isSending || isRestoring || restoreFailed} />
+        <button type="submit" aria-label="发送问题" disabled={disabled || isSending || isRestoring || restoreFailed}><Icon name="send" /></button>
       </form>
     </aside>
   );

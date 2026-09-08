@@ -7,7 +7,7 @@ import pytest
 
 from listen_dragon.api.videos import get_job_repository
 from listen_dragon.core.config import Settings, get_settings
-from listen_dragon.domain.models import JobState
+from listen_dragon.domain.models import JobState, VisualAnalysisView, VisualObservation
 from listen_dragon.infrastructure.sqlite_jobs import SqliteJobRepository
 from listen_dragon.main import app
 from listen_dragon.services.contracts import TranscriptSegment
@@ -52,6 +52,32 @@ async def test_upload_persists_file_and_job(upload_context) -> None:
     assert stored.sha256 == hashlib.sha256(payload).hexdigest()
     assert stored.source_path.read_bytes() == payload
     assert stored.source_path.is_relative_to(Path(settings.data_root) / "uploads")
+
+
+@pytest.mark.asyncio
+async def test_visual_reanalysis_is_scoped_atomic_and_persistent(upload_context):
+    settings, repository = upload_context
+    settings.llm_base_url = "https://example.test/v1"
+    settings.llm_api_key = "test-key"
+    settings.llm_model = "test-model"
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        uploaded = await client.post("/api/v1/videos", files={"file": ("clip.mp4", b"video", "video/mp4")})
+        video_id = UUID(uploaded.json()["video_id"])
+        repository.set_video_duration(video_id, 30000)
+        repository.update_job(video_id, state=JobState.ready, progress=100)
+        path = f"/api/v1/videos/{video_id}/visual-analysis"
+        assert (await client.get(path)).json()["status"] == "not_requested"
+        assert (await client.post(path)).status_code == 202
+        assert (await client.post(path)).status_code == 409
+        assert (await client.get(path)).json()["status"] == "pending"
+        assert (await client.get(f"/api/v1/videos/{uuid4()}/visual-analysis")).status_code == 404
+        repository.save_visual_analysis(video_id, VisualAnalysisView(status="ready", observations=[
+            VisualObservation(timestamp_ms=4000, text="西瓜分成两半"),
+        ]))
+        repository.update_job(video_id, state=JobState.ready, progress=100)
+        reopened = SqliteJobRepository(repository.database_path)
+        assert reopened.get_visual_analysis(video_id).observations[0].timestamp_ms == 4000
+        assert "test-key" not in (await client.get(path)).text
 
 
 @pytest.mark.asyncio

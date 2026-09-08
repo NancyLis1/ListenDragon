@@ -1,6 +1,6 @@
 # ListenDragon 视频助手
 
-ListenDragon 是“奶龙也是龙”团队的进阶项目一实现仓库。系统面向学习、访谈和会议视频，提供上传、转写、可选翻译、摘要与带时间戳引用的多轮问答。
+ListenDragon 是“奶龙也是龙”团队的进阶项目一实现仓库。系统提供视频上传、语音转写、画面事件分析、摘要与带时间戳引用的多轮问答。
 
 ## 架构摘要
 
@@ -19,6 +19,8 @@ GitHub Pages 只能托管静态前端。浏览器通过 `VITE_API_BASE_URL` 访�
 4. 运行 `powershell -ExecutionPolicy Bypass -File scripts/verify-env.ps1` 获取环境证据。
 
 当前已完成上传、任务轮询、持久化课程列表、Range 视频播放、转写、跨视频混合检索、摘要和带时间戳证据的多轮问答闭环。后端离线或课程库为空时，前端会显示明确标记的体验样例；真实课程不会与样例混合。详见 [T12 检索交接](docs/t12-handoff.md)、[T13 QA/摘要交接](docs/t13-handoff.md)和[全栈联调交接](docs/fullstack-integration.md)。
+
+视频理解采用 Qwen 官方有序帧协议。Worker 按重叠窗口提取事件；短视频概括/摘要读取全片覆盖的画面与转写，细节问答定位事件后加密回看原始画面，核验阶段同样读取画面。新上传默认分析画面；已有视频在播放器下方点击“开始音画分析”。视觉接口不读取音轨，语音仍来自本地 ASR。配置、能力边界与实测记录见[视频工作流交接](docs/video-workflow-validation.md)，设计依据见[调研记录](docs/video-workflow-research.md)。
 
 完整 AI 镜像按 CPU/INT8 基线构建：Dockerfile 从 PyTorch 官方 CPU wheel 索引预装 `torch==2.6.0`，避免默认解析 CUDA 运行时。宿主机无需单独安装 FFmpeg，容器内已固化并验证 FFmpeg 7.1.5。
 

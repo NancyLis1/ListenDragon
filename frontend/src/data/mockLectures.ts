@@ -4,6 +4,7 @@ export const processingSteps: ProcessingStep[] = [
   { id: "upload", title: "上传视频", description: "流式保存视频文件", state: "pending", detail: "等待中" },
   { id: "extract", title: "提取音频", description: "校验媒体并提取语音", state: "pending", detail: "等待中" },
   { id: "transcript", title: "生成转写", description: "识别语音并生成时间戳", state: "pending", detail: "等待中" },
+  { id: "visual", title: "分析画面", description: "抽样识别场景与可见内容", state: "pending", detail: "等待中" },
   { id: "chunk", title: "整理片段", description: "按语义切分转写内容", state: "pending", detail: "等待中" },
   { id: "index", title: "构建检索索引", description: "发布向量和关键词索引", state: "pending", detail: "等待中" },
 ];

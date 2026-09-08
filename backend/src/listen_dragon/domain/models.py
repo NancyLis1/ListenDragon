@@ -10,6 +10,7 @@ class JobState(StrEnum):
     queued = "QUEUED"
     extracting = "EXTRACTING"
     transcribing = "TRANSCRIBING"
+    visualizing = "VISUALIZING"
     translating = "TRANSLATING"
     chunking = "CHUNKING"
     indexing = "INDEXING"
@@ -52,6 +53,23 @@ class TranscriptSegmentView(BaseModel):
 class TranscriptView(BaseModel):
     video_id: UUID
     segments: list[TranscriptSegmentView]
+
+
+class VisualObservation(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    timestamp_ms: int = Field(ge=0)
+    end_ms: int | None = Field(default=None, gt=0)
+    text: str = Field(min_length=1, max_length=1200)
+
+
+class VisualAnalysisView(BaseModel):
+    status: Literal["not_requested", "pending", "ready", "failed"] = "not_requested"
+    observations: list[VisualObservation] = Field(default_factory=list)
+    version: str = "frames-v1"
+    analyzed_at: datetime | None = None
+    error_code: str | None = None
+    audio_warning: str | None = None
+    sampling_note: str = "仅分析抽样画面，未覆盖帧不能作为已观察到的事实。"
 
 
 class SearchRequest(BaseModel):
@@ -106,6 +124,7 @@ class EvidenceView(BaseModel):
     end_ms: int = Field(gt=0)
     timestamp: str = Field(pattern=r"^\[\d{2}(?::\d{2}){1,2}-\d{2}(?::\d{2}){1,2}\]$")
     text: str = Field(min_length=1)
+    source_type: Literal["speech", "visual"] = "speech"
 
     @model_validator(mode="after")
     def validate_time_range(self) -> "EvidenceView":
@@ -151,6 +170,7 @@ class ConversationMessageView(BaseModel):
 
 class ConversationView(ConversationCreated):
     messages: list[ConversationMessageView]
+    analysis_changed: bool = False
 
 
 class AnswerView(BaseModel):

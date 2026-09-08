@@ -6,6 +6,7 @@ import { ChatPanel } from "./ChatPanel";
 import { LectureVideo } from "./LectureVideo";
 import { SummaryPanel } from "./SummaryPanel";
 import { Transcript } from "./Transcript";
+import { VisualPanel } from "./VisualPanel";
 
 interface ReaderPageProps {
   lecture: LectureDetail;
@@ -15,7 +16,9 @@ interface ReaderPageProps {
 export function ReaderPage({ lecture, initialTimeMs = 0 }: ReaderPageProps) {
   const [currentTimeMs, setCurrentTimeMs] = useState(initialTimeMs);
   const [seekRequest, setSeekRequest] = useState<SeekRequest>({ timeMs: initialTimeMs, token: 0 });
-  const [activeTab, setActiveTab] = useState<"transcript" | "summary">("transcript");
+  const [activeTab, setActiveTab] = useState<"transcript" | "summary" | "visual">("transcript");
+  const [evidenceRevision, setEvidenceRevision] = useState(0);
+  const [analysisBusy, setAnalysisBusy] = useState(false);
   const [segments, setSegments] = useState(lecture.transcript);
   const [transcriptError, setTranscriptError] = useState("");
   const [transcriptLoading, setTranscriptLoading] = useState(lecture.isRemote === true);
@@ -74,7 +77,7 @@ export function ReaderPage({ lecture, initialTimeMs = 0 }: ReaderPageProps) {
     setSummaryLoading(true);
     setSummaryError("");
     void getSummary(lecture.id, controller.signal)
-      .then(setGeneratedSummary)
+      .then((result) => { if (!controller.signal.aborted) setGeneratedSummary(result); })
       .catch((error) => {
         if (!controller.signal.aborted) setSummaryError(error instanceof Error ? error.message : "摘要生成失败。");
       })
@@ -97,16 +100,25 @@ export function ReaderPage({ lecture, initialTimeMs = 0 }: ReaderPageProps) {
         <LectureVideo lecture={lecture} seekRequest={seekRequest} onTimeChange={setCurrentTimeMs} />
         <div className="reader-tabs" role="tablist" aria-label="课程内容">
           <button type="button" role="tab" aria-selected={activeTab === "transcript"} onClick={() => setActiveTab("transcript")}>转写</button>
-          <button type="button" role="tab" aria-selected={activeTab === "summary"} onClick={openSummary}>摘要</button>
+          <button type="button" role="tab" aria-selected={activeTab === "summary"} onClick={openSummary} disabled={analysisBusy}>摘要</button>
+          {lecture.isRemote && <button type="button" role="tab" aria-selected={activeTab === "visual"} onClick={() => setActiveTab("visual")}>画面</button>}
         </div>
+        {lecture.isRemote && <VisualPanel videoId={lecture.id} expanded={activeTab === "visual"} onSeek={seekTo} onBusyChange={setAnalysisBusy} onUpdated={() => {
+          summaryController.current?.abort();
+          setGeneratedSummary(null);
+          setSummaryLoading(false);
+          setSummaryError("");
+          setEvidenceRevision((revision) => revision + 1);
+          setActiveTab("visual");
+        }} />}
         {activeTab === "transcript" ? (
           transcriptLoading ? <p>正在加载转写…</p> : transcriptError ? <p className="reader-error">{transcriptError}</p> :
           <Transcript key={lecture.id} segments={segments} currentTimeMs={currentTimeMs} onSeek={seekTo} />
-        ) : (
+        ) : activeTab === "summary" ? (
           <SummaryPanel summary={lecture.summary} generated={generatedSummary} loading={summaryLoading} error={summaryError} onChapterSelect={openChapter} />
-        )}
+        ) : null}
       </section>
-      <ChatPanel key={lecture.id} lecture={lecture} onSeek={seekTo} />
+      <ChatPanel key={`${lecture.id}:${evidenceRevision}`} lecture={lecture} onSeek={seekTo} disabled={analysisBusy} />
     </main>
   );
 }

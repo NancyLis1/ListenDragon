@@ -17,6 +17,7 @@ from listen_dragon.domain.models import (
     VideoJobAccepted,
     VideoListView,
     VideoView,
+    VisualAnalysisView,
 )
 from listen_dragon.infrastructure.sqlite_jobs import SqliteJobRepository, sqlite_path_from_url
 
@@ -144,6 +145,39 @@ def get_transcript(
             for seq, segment in enumerate(segments)
         ],
     )
+
+
+@router.get("/{video_id}/visual-analysis", response_model=VisualAnalysisView)
+def get_visual_analysis(
+    video_id: UUID,
+    repository: Annotated[SqliteJobRepository, Depends(get_job_repository)],
+) -> VisualAnalysisView:
+    video = repository.get_stored_video(video_id)
+    if video is None:
+        raise mapped_api_error("VIDEO_NOT_FOUND")
+    result = repository.get_visual_analysis(video_id)
+    if video.state in {JobState.visualizing, JobState.chunking, JobState.indexing}:
+        result.status = "pending"
+    return result
+
+
+@router.post("/{video_id}/visual-analysis", response_model=VideoJobAccepted, status_code=202)
+def queue_visual_analysis(
+    video_id: UUID,
+    settings: Annotated[Settings, Depends(get_settings)],
+    repository: Annotated[SqliteJobRepository, Depends(get_job_repository)],
+) -> VideoJobAccepted:
+    video = repository.get_stored_video(video_id)
+    if video is None:
+        raise mapped_api_error("VIDEO_NOT_FOUND")
+    if not settings.vision_enabled:
+        raise mapped_api_error("VISION_DISABLED")
+    if not all((settings.llm_base_url, settings.llm_api_key,
+                settings.vision_model or settings.llm_model)):
+        raise mapped_api_error("VISION_NOT_CONFIGURED")
+    if not video.duration_ms or not repository.queue_visual_analysis(video_id):
+        raise mapped_api_error("VIDEO_NOT_READY")
+    return VideoJobAccepted(video_id=video_id, state=JobState.visualizing)
 
 
 @router.get("/{video_id}/content", response_class=FileResponse)

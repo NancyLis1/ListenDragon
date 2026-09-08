@@ -21,6 +21,8 @@ ai = [
   "sentence-transformers>=3.3,<6.0",
   "faiss-cpu>=1.9,<2.0",
   "rank-bm25>=0.2.2,<1.0",
+  "scenedetect-headless>=0.7.1,<0.8",
+  "opencv-python-headless>=4.12,<5",
 ]
 dev = [
   "coverage>=7.6,<8.0",

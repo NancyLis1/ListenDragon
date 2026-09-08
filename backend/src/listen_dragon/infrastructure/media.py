@@ -8,9 +8,10 @@ from listen_dragon.services.contracts import ExtractedMedia
 
 
 class MediaProcessingError(RuntimeError):
-    def __init__(self, error_code: str, message: str) -> None:
+    def __init__(self, error_code: str, message: str, duration_ms: int | None = None) -> None:
         super().__init__(message)
         self.error_code = error_code
+        self.duration_ms = duration_ms
 
 
 class FfmpegMediaExtractor:
@@ -78,7 +79,9 @@ class FfmpegMediaExtractor:
             raise MediaProcessingError("FFMPEG_TIMEOUT", "Audio extraction timed out") from exc
         except subprocess.CalledProcessError as exc:
             message = (exc.stderr or "FFmpeg rejected the uploaded media").strip()
-            raise MediaProcessingError("FFMPEG_FAILED", message[-1000:]) from exc
+            raise MediaProcessingError(
+                "FFMPEG_FAILED", message[-1000:], max(1, round(duration_seconds * 1000)),
+            ) from exc
         finally:
             temporary_output.unlink(missing_ok=True)
         return ExtractedMedia(output, max(1, round(duration_seconds * 1000)))

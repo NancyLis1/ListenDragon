@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     max_video_minutes: int = 60
     worker_poll_seconds: float = 2.0
     worker_concurrency: int = 1
+    worker_video_id: str | None = None
     worker_lease_seconds: int = 30 * 60
     ffmpeg_binary: str = "ffmpeg"
     ffprobe_binary: str = "ffprobe"
@@ -30,6 +31,14 @@ class Settings(BaseSettings):
     llm_base_url: str | None = None
     llm_api_key: str | None = None
     llm_model: str | None = None
+    vision_enabled: bool = True
+    vision_model: str | None = None
+    vision_interval_seconds: float = Field(default=0.5, ge=0.25, le=10)
+    vision_max_frames: int = Field(default=24, ge=4, le=24)
+    vision_window_seconds: float = Field(default=12, ge=4, le=30)
+    vision_scene_detection: bool = True
+    vision_max_windows: int = Field(default=180, ge=1, le=600)
+    vision_short_video_seconds: float = Field(default=90, ge=10, le=180)
     retrieval_top_k: int = Field(default=8, ge=1, le=100)
     retrieval_rrf_k: int = Field(default=60, ge=1)
     query_expansion_enabled: bool = True

@@ -118,6 +118,48 @@ def make_service(ready_context, *, answerable=True, context_chars=24000):
     )
 
 
+def test_visual_and_speech_evidence_remain_distinct_in_answers_and_summary_cache(ready_context):
+    jobs, conversations, video_id = ready_context
+    visual = DocumentChunk(f"visual:{video_id}:4000", 4000, 5000, "画面观察：西瓜分成两半", 10)
+    speech = DocumentChunk("speech", 1000, 8000, "疼吗", 2)
+    jobs.replace_chunks(video_id, [speech])
+    jobs.set_chunk_index_version(video_id, "old-index")
+    generator = FakeGenerator()
+    service = GroundedGenerationService(jobs, conversations, FakeRetriever([
+        RetrievedChunk(visual.chunk_id, 4000, 5000, visual.text, 1),
+    ]), generator)
+    assert service.summarize(video_id, SummaryRequest()).cached is False
+    jobs.replace_chunks(video_id, [visual, speech])
+    jobs.set_chunk_index_version(video_id, "visual-index")
+    assert service.summarize(video_id, SummaryRequest()).cached is False
+    assert generator.summary_calls == 2
+    created = service.create_conversation(video_id)
+    result = service.ask(created.conversation_id, "画面中有什么？")
+    assert result.evidence[0].source_type == "visual"
+    assert result.evidence[0].start_ms == 4000
+    restored = service.get_conversation(created.conversation_id)
+    assert restored.messages[-1].evidence[0].source_type == "visual"
+
+
+def test_overview_includes_visual_timeline_missed_by_nearest_chunk_retrieval(ready_context):
+    jobs, conversations, video_id = ready_context
+    visual = DocumentChunk(f"visual:{video_id}:4000", 4000, 5000, "画面中西瓜分成两半", 10)
+    jobs.replace_chunks(video_id, jobs.list_chunks(video_id) + [visual])
+    jobs.set_chunk_index_version(video_id, "combined-index")
+    class OverviewGenerator(FakeGenerator):
+        def answer(self, *, question, conversation_summary, evidence):
+            assert any(item.source_type == "visual" for item in evidence)
+            assert any(item.source_type == "speech" for item in evidence)
+            assert len(evidence) == 3
+            return AnswerDraft(True, (GroundedClaim("可见西瓜", (visual.chunk_id,)),), "")
+    service = GroundedGenerationService(jobs, conversations, FakeRetriever([
+        RetrievedChunk("a", 1000, 5000, "第一段内容", 1),
+    ]), OverviewGenerator())
+    created = service.create_conversation(video_id)
+    result = service.ask(created.conversation_id, "这个视频主要是关于什么的？")
+    assert result.evidence[0].source_type == "visual"
+
+
 def test_grounded_answer_builds_server_owned_timestamp_and_persists_exchange(ready_context):
     _, conversations, video_id = ready_context
     service, retriever, _ = make_service(ready_context)

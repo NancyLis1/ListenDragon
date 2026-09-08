@@ -33,7 +33,7 @@ export function SummaryPanel({ summary, generated, loading, error, onChapterSele
               <li key={item.chunk_id}>
                 <button type="button" onClick={() => onChapterSelect(item.start_ms)} aria-label={`播放引用 ${item.timestamp}`}>
                   <span className="chapter-index">{String(index + 1).padStart(2, "0")}</span>
-                  <span className="chapter-copy"><strong>{item.timestamp}</strong><small>{item.text}</small></span>
+                  <span className="chapter-copy"><strong>{item.source_type === "visual" ? "画面观察" : "语音转写"} {item.timestamp}</strong><small>{item.text}</small></span>
                   <time>{formatTimestamp(item.start_ms)}</time>
                 </button>
               </li>

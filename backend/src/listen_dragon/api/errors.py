@@ -54,6 +54,15 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
 
 
 _ERRORS: dict[str, tuple[int, str, bool]] = {
+    "VISION_ANALYSIS_REQUIRED": (409, "该视频尚未完成新版音画分析。请点击播放器下方的“开始音画分析”，完成后再提问。", False),
+    "ANALYSIS_CHANGED": (409, "分析结果刚刚更新，请重新提问或生成摘要。", True),
+    "FRAME_EXTRACTION_FAILED": (503, "读取视频画面失败，请检查原视频是否可播放后重试。", True),
+    "VISION_INVALID_RESPONSE": (503, "画面分析的时间信息不合法，请重试。", True),
+    "VISION_DEPENDENCY_MISSING": (503, "镜头切分依赖缺失，请安装后端 AI 依赖后重试。", False),
+    "SCENE_DETECTION_FAILED": (503, "镜头切分失败，请检查视频解码后重试。", True),
+    "VISION_TOO_MANY_SCENES": (422, "视频镜头数超过当前分析预算，请上传较短片段或调整服务端预算。", False),
+    "VISION_DISABLED": (503, "服务端尚未启用画面分析。", False),
+    "VISION_NOT_CONFIGURED": (503, "画面分析模型尚未配置。", False),
     "INVALID_QUERY": (422, "问题或检索参数不合法。", False),
     "VIDEO_NOT_FOUND": (404, "视频不存在或已删除。", False),
     "VIDEO_NOT_READY": (409, "视频尚未处理完成，请稍后重试。", True),

@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { lectures } from "../../data/mockLectures";
-import { askQuestion, createConversation, getConversation, getSummary, getTranscript } from "../../lib/api";
+import { askQuestion, createConversation, getConversation, getSummary, getTranscript, getVisualAnalysis } from "../../lib/api";
 import { saveLocal } from "../../lib/persistence";
 import type { LectureDetail } from "../../types/lecture";
 import { ReaderPage } from "./ReaderPage";
@@ -16,6 +16,7 @@ vi.mock("../../lib/api", async (importOriginal) => {
     getConversation: vi.fn(),
     getSummary: vi.fn(),
     getTranscript: vi.fn(),
+    getVisualAnalysis: vi.fn(),
   };
 });
 
@@ -34,6 +35,7 @@ const remoteLecture: LectureDetail = {
 
 describe("ReaderPage remote data", () => {
   beforeEach(() => {
+    vi.mocked(getVisualAnalysis).mockResolvedValue({ status: "not_requested", observations: [], error_code: null, audio_warning: null, sampling_note: "仅分析抽样画面" });
     vi.mocked(getTranscript).mockResolvedValue([
       { seq: 0, start_ms: 1000, end_ms: 3000, text: "真实转写片段", language: "zh" },
     ]);
@@ -124,6 +126,18 @@ describe("ReaderPage remote data", () => {
     const { container } = render(<ReaderPage lecture={remoteLecture} />);
     fireEvent.error(container.querySelector("video")!);
     expect(screen.getByRole("alert").textContent).toContain("视频加载失败");
+  });
+
+  it("labels visual coverage and seeks to a visual observation without altering the transcript", async () => {
+    vi.mocked(getVisualAnalysis).mockResolvedValue({ status: "ready", version: "sequence-v3", observations: [{ timestamp_ms: 4000, text: "可见打开的西瓜" }], error_code: null, audio_warning: null, sampling_note: "仅分析抽样画面" });
+    render(<ReaderPage lecture={remoteLecture} />);
+    expect(await screen.findByText(/画面分析完成：1 段事件/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab", { name: "画面" }));
+    expect(screen.getByText("可见打开的西瓜")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "查看画面 0:04" }));
+    expect(screen.getByRole("slider", { name: "播放进度" }).getAttribute("value")).toBe("4");
+    fireEvent.click(screen.getByRole("tab", { name: "转写" }));
+    expect(screen.getByText("真实转写片段")).toBeTruthy();
   });
 
   it("preserves a saved conversation after a restore failure until explicitly replaced", async () => {

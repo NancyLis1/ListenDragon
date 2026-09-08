@@ -3,7 +3,25 @@ const normalizedBase = apiBase.replace(/\/$/, "");
 const healthUrl = apiBase.replace(/\/api\/v1\/?$/, "/health/live");
 
 export type BackendStatus = "checking" | "online" | "offline";
-export type JobState = "QUEUED" | "EXTRACTING" | "TRANSCRIBING" | "CHUNKING" | "INDEXING" | "READY" | "FAILED";
+export type JobState = "QUEUED" | "EXTRACTING" | "TRANSCRIBING" | "VISUALIZING" | "CHUNKING" | "INDEXING" | "READY" | "FAILED";
+
+export interface ApiVisualAnalysis {
+  version?: string;
+  analyzed_at?: string | null;
+  status: "not_requested" | "pending" | "ready" | "failed";
+  observations: Array<{ timestamp_ms: number; end_ms?: number | null; text: string }>;
+  error_code: string | null;
+  audio_warning: string | null;
+  sampling_note: string;
+}
+
+export function getVisualAnalysis(id: string, signal?: AbortSignal): Promise<ApiVisualAnalysis> {
+  return requestJson(`/videos/${id}/visual-analysis`, { signal });
+}
+
+export function analyzeVisuals(id: string, signal?: AbortSignal): Promise<unknown> {
+  return requestJson(`/videos/${id}/visual-analysis`, { method: "POST", signal });
+}
 
 export interface ApiVideo {
   video_id: string;
@@ -32,6 +50,7 @@ export interface ApiEvidence {
   end_ms: number;
   timestamp: string;
   text: string;
+  source_type?: "speech" | "visual";
 }
 
 export interface ApiSummary {
@@ -62,6 +81,7 @@ export interface ApiAnswer {
 }
 
 export interface ApiConversation {
+  analysis_changed?: boolean;
   conversation_id: string;
   video_id: string;
   created_at: string;
