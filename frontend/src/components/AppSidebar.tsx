@@ -22,6 +22,7 @@ export function AppSidebar({ currentView, onNavigate }: AppSidebarProps) {
             className={`nav-item ${currentView === item.view ? "is-active" : ""}`}
             type="button"
             key={item.view}
+            aria-label={item.label}
             onClick={() => onNavigate(item.view)}
           >
             <Icon name={item.icon} />

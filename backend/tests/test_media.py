@@ -1,5 +1,6 @@
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -68,3 +69,29 @@ def test_ffmpeg_extractor_rejects_overlong_video(
         extractor.extract_audio(video, tmp_path / "audio.wav")
 
     assert error.value.error_code == "VIDEO_TOO_LONG"
+
+
+@pytest.mark.parametrize("phase", ["probe", "extract"])
+def test_media_errors_survive_non_locale_stderr(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, phase: str,
+) -> None:
+    real_run = subprocess.run
+
+    def run_child(command: list[str], **kwargs) -> subprocess.CompletedProcess[str]:
+        if phase == "extract" and command[0] == "ffprobe":
+            return subprocess.CompletedProcess(
+                command, 0, stdout='{"format":{"duration":"1"}}', stderr="",
+            )
+        # A real child process emits UTF-8 plus an invalid byte, independent of OS locale.
+        return real_run([
+            sys.executable, "-c",
+            ("import sys; sys.stderr.buffer.write('媒体损坏'.encode('utf-8') + bytes([255]));"
+             "sys.exit(1)"),
+        ], **kwargs)
+
+    monkeypatch.setattr(subprocess, "run", run_child)
+    with pytest.raises(MediaProcessingError) as error:
+        FfmpegMediaExtractor().extract_audio(tmp_path / "中文.mp4", tmp_path / "audio.wav")
+    assert error.value.error_code == ("INVALID_MEDIA" if phase == "probe" else "FFMPEG_FAILED")
+    if phase == "extract":
+        assert "媒体损坏" in str(error.value)

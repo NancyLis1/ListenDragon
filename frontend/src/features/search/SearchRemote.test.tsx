@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { lectures } from "../../data/mockLectures";
@@ -12,6 +12,23 @@ vi.mock("../../lib/api", async (importOriginal) => {
 });
 
 describe("SearchPage remote retrieval", () => {
+  it("clears an in-flight search without a stuck spinner or stale response", async () => {
+    const lecture: LectureDetail = { ...lectures[0], id: "remote", visual: "science", isRemote: true };
+    let finish!: (items: Awaited<ReturnType<typeof searchVideos>>) => void;
+    vi.mocked(searchVideos).mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+    render(<SearchPage lectures={[lecture]} onOpenLecture={vi.fn()} />);
+    expect(screen.queryByText("The Scientific Method")).toBeNull();
+    expect(screen.getAllByText("已上传视频")).toHaveLength(2);
+    expect((screen.getByRole("textbox", { name: "搜索课程" }) as HTMLInputElement).value).toBe("");
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "尚未完成的请求" } });
+    expect(await screen.findByText("正在检索…")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "清除搜索" }));
+    expect(screen.queryByText("正在检索…")).toBeNull();
+    expect(screen.getByText("1 条结果")).toBeTruthy();
+    await act(async () => { finish([]); });
+    expect(screen.getByText("1 条结果")).toBeTruthy();
+  });
+
   it("debounces backend search and opens a timestamped result", async () => {
     const lecture: LectureDetail = {
       ...lectures[0], id: "11111111-1111-4111-8111-111111111111", title: "真实课程", isRemote: true,

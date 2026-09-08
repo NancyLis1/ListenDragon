@@ -44,6 +44,16 @@ describe("UploadPage", () => {
     expect(screen.queryByRole("button", { name: "开始解析" })).toBeNull();
   });
 
+  it("does not invent a duration or round tiny invalid files up to one megabyte", async () => {
+    vi.useFakeTimers();
+    const { container } = render(<UploadPage backendStatus="online" onComplete={vi.fn()} />);
+    fireEvent.change(container.querySelector('input[type="file"]')!, {
+      target: { files: [new File(["bad"], "invalid.mp4", { type: "video/mp4" })] },
+    });
+    await act(async () => { await vi.advanceTimersByTimeAsync(1600); });
+    expect(screen.getByText("3 B · 时长待校验")).toBeTruthy();
+  });
+
   it("rejects videos over the upload limit", () => {
     const { container } = render(<UploadPage backendStatus="online" onComplete={() => undefined} />);
     const file = new File(["video"], "large.mp4", { type: "video/mp4" });
@@ -93,5 +103,18 @@ describe("UploadPage", () => {
 
     expect(screen.getByText("后端服务未连接，请启动 API 和 Worker 后重试。")).toBeTruthy();
     expect(uploadVideo).not.toHaveBeenCalled();
+  });
+
+  it("explains an empty transcript and lets the user retry the same video", async () => {
+    vi.mocked(getVideo).mockResolvedValue({ ...readyVideo, state: "FAILED", progress: 30, error_code: "ASR_EMPTY" });
+    const { container } = render(<UploadPage backendStatus="online" onComplete={() => undefined} />);
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(["video"], "silent.mp4", { type: "video/mp4" });
+    fireEvent.change(input, { target: { files: [file] } });
+    fireEvent.click(screen.getByRole("button", { name: "开始解析" }));
+    expect(await screen.findByText(/未识别到可转写的语音/)).toBeTruthy();
+    expect(input.value).toBe("");
+    fireEvent.change(input, { target: { files: [file] } });
+    expect(screen.getByRole("button", { name: "开始解析" })).toBeTruthy();
   });
 });

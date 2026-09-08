@@ -15,7 +15,16 @@ interface UploadPageProps {
 const acceptedTypes = ["video/mp4", "video/webm", "video/quicktime", "video/x-matroska"];
 const acceptedExtensions = [".mp4", ".webm", ".mov", ".mkv"];
 const maxFileSize = 500 * 1024 * 1024;
-const fallbackDurationMs = 60_000;
+const fallbackDurationMs = 0;
+const processingErrors: Record<string, string> = {
+  ASR_FAILED: "语音识别失败，请检查服务端模型是否已下载及模型服务是否可用，然后重新选择视频上传。",
+  ASR_UNAVAILABLE: "服务端缺少语音识别组件，请安装后重新上传。",
+  ASR_EMPTY: "未识别到可转写的语音，请选择包含清晰讲话的视频。",
+  INVALID_MEDIA: "文件无法识别为有效视频，请检查文件是否损坏。",
+  FFMPEG_FAILED: "音频提取失败，请确认视频包含可用音轨。",
+  VIDEO_TOO_LONG: "视频超过服务端时长限制，请截取较短片段后上传。",
+  INDEX_BUILD_FAILED: "检索索引构建失败，请检查服务端模型及存储后重新上传。",
+};
 const stateStep: Partial<Record<JobState, number>> = {
   QUEUED: 1,
   EXTRACTING: 1,
@@ -25,6 +34,8 @@ const stateStep: Partial<Record<JobState, number>> = {
 };
 
 export function formatFileSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return bytes >= 1024 * 1024 * 1024
     ? `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`
     : `${Math.max(1, Math.round(bytes / 1024 / 1024))} MB`;
@@ -90,11 +101,15 @@ function stepsForJob(file: File | null, job?: ApiVideo): ProcessingStep[] {
 
 function waitForPoll(signal: AbortSignal) {
   return new Promise<void>((resolve, reject) => {
-    const timer = window.setTimeout(resolve, 1000);
-    signal.addEventListener("abort", () => {
+    const abort = () => {
       window.clearTimeout(timer);
       reject(new DOMException("Aborted", "AbortError"));
-    }, { once: true });
+    };
+    const timer = window.setTimeout(() => {
+      signal.removeEventListener("abort", abort);
+      resolve();
+    }, 1000);
+    signal.addEventListener("abort", abort, { once: true });
   });
 }
 
@@ -148,7 +163,8 @@ export function UploadPage({ backendStatus, onComplete }: UploadPageProps) {
         return;
       }
       if (job.state === "FAILED") {
-        throw new ApiError(`视频处理失败：${job.error_code || "UNKNOWN"}`, 409, job.error_code || "PROCESSING_FAILED");
+        const code = job.error_code || "UNKNOWN";
+        throw new ApiError(`${processingErrors[code] || "视频处理失败，请检查服务端日志后重新上传。"}（${code}）`, 409, code);
       }
       await waitForPoll(controller.signal);
     }
@@ -201,7 +217,10 @@ export function UploadPage({ backendStatus, onComplete }: UploadPageProps) {
     }
   };
 
-  const handleInput = (event: ChangeEvent<HTMLInputElement>) => selectFile(event.target.files?.[0]);
+  const handleInput = (event: ChangeEvent<HTMLInputElement>) => {
+    selectFile(event.target.files?.[0]);
+    event.target.value = ""; // Allow selecting the same file again after a failed job.
+  };
   const handleDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     setIsDragging(false);
@@ -235,7 +254,7 @@ export function UploadPage({ backendStatus, onComplete }: UploadPageProps) {
           <h2>文件</h2>
           <div className="file-preview"><span className="preview-play"><Icon name="play" /></span><span>Lecture Reader<br />后端持久化</span></div>
           <strong>{selectedFile?.name || "尚未选择视频"}</strong>
-          <p>{selectedFile ? `${formatFileSize(selectedFile.size)} · ${formatTimestamp(durationMs)}` : "选择文件后显示信息"}</p>
+          <p>{selectedFile ? `${formatFileSize(selectedFile.size)} · ${durationMs > 0 ? formatTimestamp(durationMs) : "时长待校验"}` : "选择文件后显示信息"}</p>
         </section>
         <section className="info-callout"><Icon name="info" /><p>视频会上传至配置的 ListenDragon 后端，并在处理完成后持久保存。</p></section>
         <p className={`backend-status backend-status--${backendStatus}`}>后端状态：{backendStatus === "online" ? "已连接" : backendStatus === "offline" ? "离线" : "检查中"}</p>

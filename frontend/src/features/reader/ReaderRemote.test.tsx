@@ -2,7 +2,8 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { lectures } from "../../data/mockLectures";
-import { askQuestion, createConversation, getSummary, getTranscript } from "../../lib/api";
+import { askQuestion, createConversation, getConversation, getSummary, getTranscript } from "../../lib/api";
+import { saveLocal } from "../../lib/persistence";
 import type { LectureDetail } from "../../types/lecture";
 import { ReaderPage } from "./ReaderPage";
 
@@ -12,6 +13,7 @@ vi.mock("../../lib/api", async (importOriginal) => {
     ...actual,
     askQuestion: vi.fn(),
     createConversation: vi.fn(),
+    getConversation: vi.fn(),
     getSummary: vi.fn(),
     getTranscript: vi.fn(),
   };
@@ -86,6 +88,53 @@ describe("ReaderPage remote data", () => {
     fireEvent.change(input, { target: { value: "再解释一下" } });
     fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
     await waitFor(() => expect(askQuestion).toHaveBeenCalledTimes(2));
+    expect(createConversation).toHaveBeenCalledTimes(1);
+  });
+
+  it("restores history and keeps the same conversation for a follow-up after remount", async () => {
+    saveLocal(`conversation:${videoId}`, "saved-conversation");
+    vi.mocked(getConversation).mockResolvedValue({
+      conversation_id: "saved-conversation", video_id: videoId, created_at: "2026-09-08T00:00:00Z",
+      messages: [{ message_id: "saved-message", role: "assistant", content: "已保存的回答",
+        created_at: "2026-09-08T00:00:00Z", evidence: [{ chunk_id: "chunk-1", video_id: videoId,
+          start_ms: 1000, end_ms: 3000, timestamp: "[00:01-00:03]", text: "真实转写片段" }] }],
+    });
+    render(<ReaderPage lecture={remoteLecture} />);
+    expect(await screen.findByText("已保存的回答")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "跳到 0:01" }));
+    expect(screen.getByRole("slider", { name: "播放进度" }).getAttribute("value")).toBe("1");
+    fireEvent.change(screen.getByRole("textbox", { name: "课程问题" }), { target: { value: "继续解释" } });
+    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    await waitFor(() => expect(askQuestion).toHaveBeenCalledWith("saved-conversation", "继续解释"));
+    expect(createConversation).not.toHaveBeenCalled();
+  });
+
+  it("explicitly creates a new conversation and uses it for the next question", async () => {
+    render(<ReaderPage lecture={remoteLecture} />);
+    fireEvent.click(screen.getByRole("button", { name: "新建会话" }));
+    await waitFor(() => expect(createConversation).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect((screen.getByRole("textbox", { name: "课程问题" }) as HTMLInputElement).disabled).toBe(false));
+    fireEvent.change(screen.getByRole("textbox", { name: "课程问题" }), { target: { value: "第一个问题" } });
+    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    await waitFor(() => expect(askQuestion).toHaveBeenCalledWith("conversation-1", "第一个问题"));
+    expect(createConversation).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows a visible error when the real video cannot load", () => {
+    const { container } = render(<ReaderPage lecture={remoteLecture} />);
+    fireEvent.error(container.querySelector("video")!);
+    expect(screen.getByRole("alert").textContent).toContain("视频加载失败");
+  });
+
+  it("preserves a saved conversation after a restore failure until explicitly replaced", async () => {
+    saveLocal(`conversation:${videoId}`, "saved-conversation");
+    vi.mocked(getConversation).mockRejectedValue(new Error("network unavailable"));
+    render(<ReaderPage lecture={remoteLecture} />);
+    expect(await screen.findByRole("alert")).toBeTruthy();
+    expect((screen.getByRole("textbox", { name: "课程问题" }) as HTMLInputElement).disabled).toBe(true);
+    expect(createConversation).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "新建会话" }));
+    await waitFor(() => expect((screen.getByRole("textbox", { name: "课程问题" }) as HTMLInputElement).disabled).toBe(false));
     expect(createConversation).toHaveBeenCalledTimes(1);
   });
 });

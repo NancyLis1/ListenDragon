@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from listen_dragon.infrastructure.faiss_io import write_index
 from listen_dragon.services.contracts import DocumentChunk
 
 _TERM_PATTERN = re.compile(r"[A-Za-z0-9_]+|[\u4e00-\u9fff]")
@@ -141,7 +142,7 @@ class HybridIndexBuilder:
             import faiss
 
             index_factory = index_factory or faiss.IndexFlatIP
-            index_writer = index_writer or faiss.write_index
+            index_writer = index_writer or write_index
         if bm25_factory is None:
             from rank_bm25 import BM25Okapi
 

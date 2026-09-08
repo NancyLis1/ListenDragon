@@ -9,6 +9,8 @@ from uuid import UUID
 from listen_dragon.domain.models import (
     AnswerView,
     ConversationCreated,
+    ConversationMessageView,
+    ConversationView,
     EvidenceView,
     JobState,
     SummaryRequest,
@@ -90,6 +92,26 @@ class GroundedGenerationService:
             conversation_id=stored.conversation_id,
             video_id=stored.video_id,
             created_at=stored.created_at,
+        )
+
+    def get_conversation(self, conversation_id: UUID) -> ConversationView:
+        stored = self.conversations.get_conversation(conversation_id)
+        if stored is None:
+            raise ServiceError("CONVERSATION_NOT_FOUND")
+        return ConversationView(
+            conversation_id=stored.conversation_id,
+            video_id=stored.video_id,
+            created_at=stored.created_at,
+            messages=[
+                ConversationMessageView(
+                    message_id=message.message_id,
+                    role=message.role,
+                    content=message.content,
+                    evidence=list(message.evidence),
+                    created_at=message.created_at,
+                )
+                for message in self.conversations.list_messages(conversation_id)
+            ],
         )
 
     def ask(self, conversation_id: UUID, question: str) -> AnswerView:

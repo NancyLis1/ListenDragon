@@ -89,6 +89,35 @@ async def test_conversation_qa_and_summary_api_contract(api_context):
 
 
 @pytest.mark.asyncio
+async def test_reads_persisted_history_with_evidence_after_repository_reopen(api_context):
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        created = await client.post("/api/v1/conversations", json={"video_id": str(api_context)})
+        conversation_id = created.json()["conversation_id"]
+        for question in ("视频讲了什么？", "再解释一下"):
+            response = await client.post(
+                f"/api/v1/conversations/{conversation_id}/messages", json={"question": question}
+            )
+            assert response.status_code == 200
+        service = app.dependency_overrides[get_generation_service]()
+        reopened = SqliteConversationRepository(service.conversations.database_path)
+        restored_service = GroundedGenerationService(
+            service.jobs, reopened, Retriever(), Generator()
+        )
+        app.dependency_overrides[get_generation_service] = lambda: restored_service
+        history = await client.get(f"/api/v1/conversations/{conversation_id}")
+        missing = await client.get(f"/api/v1/conversations/{uuid4()}")
+    assert history.status_code == 200
+    assert history.json()["video_id"] == str(api_context)
+    messages = history.json()["messages"]
+    assert [m["role"] for m in messages] == ["user", "assistant", "user", "assistant"]
+    assert messages[0]["content"] == "视频讲了什么？"
+    assert messages[3]["evidence"][0]["start_ms"] == 125000
+    assert missing.status_code == 404
+    assert missing.json()["error_code"] == "CONVERSATION_NOT_FOUND"
+
+
+@pytest.mark.asyncio
 async def test_generation_api_validation_and_not_found_error_are_structured(api_context):
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:

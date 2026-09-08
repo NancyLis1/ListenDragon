@@ -8,6 +8,7 @@ import { UploadPage } from "../features/upload/UploadPage";
 import { formatTimestamp } from "../features/reader/LectureVideo";
 import { checkBackend, listVideos, videoContentUrl, type ApiVideo, type BackendStatus } from "../lib/api";
 import type { AppView, LectureDetail } from "../types/lecture";
+import { readSaved, saveLocal } from "../lib/persistence";
 
 const viewFromHash = (): AppView => {
   const view = window.location.hash.slice(1);
@@ -40,9 +41,10 @@ export function videoToLecture(video: ApiVideo): LectureDetail {
 export default function App() {
   const [currentView, setCurrentView] = useState<AppView>(viewFromHash);
   const [courseLibrary, setCourseLibrary] = useState(lectures);
-  const [activeLectureId, setActiveLectureId] = useState(lectures[0].id);
-  const [readerStartMs, setReaderStartMs] = useState(lectures[0].timestampMs);
+  const [activeLectureId, setActiveLectureId] = useState(() => readSaved("active-video") || lectures[0].id);
+  const [readerStartMs, setReaderStartMs] = useState(0);
   const [backendStatus, setBackendStatus] = useState<BackendStatus>("checking");
+  const [libraryLoading, setLibraryLoading] = useState(true);
   const loadToken = useRef(0);
   const activeLecture = courseLibrary.find((lecture) => lecture.id === activeLectureId) ?? courseLibrary[0];
 
@@ -59,6 +61,7 @@ export default function App() {
     setBackendStatus(status);
     if (status === "offline") {
       setCourseLibrary(lectures);
+      setLibraryLoading(false);
       return;
     }
     try {
@@ -70,6 +73,8 @@ export default function App() {
       if (token !== loadToken.current) return;
       setBackendStatus("offline");
       setCourseLibrary(lectures);
+    } finally {
+      if (token === loadToken.current) setLibraryLoading(false);
     }
   };
 
@@ -83,6 +88,7 @@ export default function App() {
   };
 
   const openLecture = (lectureId: string, timeMs: number) => {
+    saveLocal("active-video", lectureId);
     setActiveLectureId(lectureId);
     setReaderStartMs(timeMs);
     navigate("reader");
@@ -101,8 +107,8 @@ export default function App() {
     <div className="application-shell">
       <AppSidebar currentView={currentView} onNavigate={navigate} />
       {currentView === "upload" && <UploadPage backendStatus={backendStatus} onComplete={addUploadedLecture} />}
-      {currentView === "search" && <SearchPage lectures={courseLibrary} onOpenLecture={openLecture} />}
-      {currentView === "reader" && <ReaderPage lecture={activeLecture} initialTimeMs={readerStartMs} />}
+      {currentView === "search" && (libraryLoading ? <main>正在恢复课程…</main> : <SearchPage lectures={courseLibrary} onOpenLecture={openLecture} />)}
+      {currentView === "reader" && (libraryLoading ? <main>正在恢复课程…</main> : <ReaderPage key={activeLecture.id} lecture={activeLecture} initialTimeMs={readerStartMs} />)}
     </div>
   );
 }

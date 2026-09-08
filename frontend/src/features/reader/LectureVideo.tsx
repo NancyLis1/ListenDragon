@@ -26,6 +26,7 @@ export function LectureVideo({ lecture, seekRequest, onTimeChange }: LectureVide
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTimeMs, setCurrentTimeMs] = useState(seekRequest.timeMs);
   const [playbackRate, setPlaybackRate] = useState(1);
+  const [playbackError, setPlaybackError] = useState("");
 
   const updateTime = (timeMs: number) => {
     const boundedTime = Math.max(0, Math.min(timeMs, lecture.durationMs));
@@ -58,10 +59,12 @@ export function LectureVideo({ lecture, seekRequest, onTimeChange }: LectureVide
     }
     if (videoRef.current.paused) {
       try {
+        setPlaybackError("");
         await videoRef.current.play();
         setIsPlaying(true);
       } catch {
         setIsPlaying(false);
+        setPlaybackError("视频播放失败，请检查网络、源文件或浏览器格式支持后重试。");
       }
     } else {
       videoRef.current.pause();
@@ -95,6 +98,7 @@ export function LectureVideo({ lecture, seekRequest, onTimeChange }: LectureVide
           ref={videoRef}
           className="lecture-video"
           src={lecture.videoUrl}
+          onError={() => setPlaybackError("视频加载失败，请检查网络及源文件是否可用后刷新重试。")}
           onTimeUpdate={(event) => updateTime(event.currentTarget.currentTime * 1000)}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
@@ -104,6 +108,7 @@ export function LectureVideo({ lecture, seekRequest, onTimeChange }: LectureVide
       ) : (
         <VideoArtwork visual={lecture.visual} className="lecture-artwork" />
       )}
+      {playbackError && <p className="reader-error" role="alert">{playbackError}</p>}
       <div className="player-controls">
         <button type="button" onClick={() => void togglePlayback()} aria-label={isPlaying ? "暂停" : "播放"}>
           <Icon name={isPlaying ? "pause" : "play"} />

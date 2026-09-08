@@ -14,6 +14,7 @@ from listen_dragon.domain.models import (
     AnswerView,
     ConversationCreate,
     ConversationCreated,
+    ConversationView,
     MessageCreate,
     SummaryRequest,
     SummaryView,
@@ -109,6 +110,17 @@ async def create_conversation(
     try:
         return await run_in_threadpool(service.create_conversation, payload.video_id)
     except (RetrievalError, GenerationError, ServiceError) as exc:
+        raise mapped_api_error(exc.error_code) from exc
+
+
+@router.get("/conversations/{conversation_id}", response_model=ConversationView)
+async def read_conversation(
+    conversation_id: UUID,
+    service: Annotated[GroundedGenerationService, Depends(get_generation_service)],
+) -> ConversationView:
+    try:
+        return await run_in_threadpool(service.get_conversation, conversation_id)
+    except ServiceError as exc:
         raise mapped_api_error(exc.error_code) from exc
 
 

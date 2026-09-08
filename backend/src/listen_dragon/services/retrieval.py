@@ -283,9 +283,9 @@ class LocalHybridRetriever:
                 raise RetrievalError("INDEX_CORRUPT")
             reader = self._index_reader
             if reader is None:
-                import faiss
+                from listen_dragon.infrastructure.faiss_io import read_index
 
-                reader = faiss.read_index
+                reader = read_index
             dense = reader(str(root / "faiss.index"))
             if dense.ntotal != len(chunks) or dense.metric_type != 0 or dense.d < 1:
                 raise RetrievalError("INDEX_CORRUPT")

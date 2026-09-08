@@ -1,5 +1,6 @@
 from datetime import datetime
 from enum import StrEnum
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -138,6 +139,18 @@ class MessageCreate(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     question: str = Field(min_length=1, max_length=1000)
+
+
+class ConversationMessageView(BaseModel):
+    message_id: UUID
+    role: Literal["user", "assistant"]
+    content: str
+    evidence: list[EvidenceView]
+    created_at: datetime
+
+
+class ConversationView(ConversationCreated):
+    messages: list[ConversationMessageView]
 
 
 class AnswerView(BaseModel):

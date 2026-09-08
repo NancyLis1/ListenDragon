@@ -5,9 +5,17 @@ interface VideoArtworkProps {
   visual: Lecture["visual"];
   duration?: string;
   className?: string;
+  isRemote?: boolean;
 }
 
-export function VideoArtwork({ visual, duration, className = "" }: VideoArtworkProps) {
+export function VideoArtwork({ visual, duration, className = "", isRemote = false }: VideoArtworkProps) {
+  if (isRemote) return (
+    <div className={`video-artwork ${className}`} aria-label="已上传视频预览">
+      <div className="artwork-screen"><strong>已上传视频</strong><span>点击播放查看内容</span></div>
+      {duration && <span className="duration-badge">{duration}</span>}
+      <span className="artwork-play"><Icon name="play" /></span>
+    </div>
+  );
   return (
     <div className={`video-artwork video-artwork--${visual} ${className}`} aria-label="课程视频预览图">
       <div className="artwork-screen">

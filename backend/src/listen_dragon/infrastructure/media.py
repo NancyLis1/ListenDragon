@@ -65,6 +65,8 @@ class FfmpegMediaExtractor:
                 check=True,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=self.timeout_seconds,
             )
             if not temporary_output.is_file() or temporary_output.stat().st_size == 0:
@@ -98,6 +100,8 @@ class FfmpegMediaExtractor:
                 check=True,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=30,
             )
             payload = json.loads(result.stdout)

@@ -331,7 +331,9 @@ def test_default_dependency_factories_and_settings(published, monkeypatch):
     from listen_dragon.services.retrieval import build_retriever
 
     retriever, first, _, dense = published
-    monkeypatch.setitem(__import__("sys").modules, "faiss", SimpleNamespace(read_index=lambda _: dense))
+    monkeypatch.setitem(
+        __import__("sys").modules, "faiss", SimpleNamespace(deserialize_index=lambda _: dense)
+    )
     monkeypatch.setitem(__import__("sys").modules, "sentence_transformers",
                         SimpleNamespace(SentenceTransformer=lambda _: Encoder()))
     settings = Settings(

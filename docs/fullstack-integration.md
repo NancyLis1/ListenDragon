@@ -17,6 +17,7 @@
 | GET | `/api/v1/videos/{video_id}/transcript` | 获取 `READY` 视频的分段转写 |
 | GET | `/api/v1/videos/{video_id}/content` | 支持 HTTP Range 的源视频播放 |
 | POST | `/api/v1/search` | 在指定的 1–50 个 `READY` 视频中搜索 |
+| GET | `/api/v1/conversations/{conversation_id}` | 恢复持久化会话消息及结构化证据，不返回内部会话记忆 |
 
 搜索请求示例：
 

@@ -50,7 +50,7 @@ export function findLectureMatches(lectures: LectureDetail[], query: string): Le
 }
 
 export function SearchPage({ lectures, onOpenLecture }: SearchPageProps) {
-  const [query, setQuery] = useState(initialQuery);
+  const [query, setQuery] = useState(lectures.some((lecture) => lecture.isRemote) ? "" : initialQuery);
   const [selectedId, setSelectedId] = useState(lectures[0]?.id ?? "");
   const localResults = useMemo(() => findLectureMatches(lectures, query), [lectures, query]);
   const [remoteResults, setRemoteResults] = useState<LectureSearchResult[]>([]);
@@ -72,6 +72,7 @@ export function SearchPage({ lectures, onOpenLecture }: SearchPageProps) {
         preview: lecture.preview,
       })));
       setSearchError("");
+      setIsSearching(false);
       return;
     }
     const controller = new AbortController();
@@ -79,7 +80,9 @@ export function SearchPage({ lectures, onOpenLecture }: SearchPageProps) {
       setIsSearching(true);
       setSearchError("");
       void searchVideos(normalized, lectures.map((lecture) => lecture.id), controller.signal)
-        .then((items) => setRemoteResults(items.flatMap((item) => {
+        .then((items) => {
+          if (controller.signal.aborted) return;
+          setRemoteResults(items.flatMap((item) => {
           const lecture = lectures.find((candidate) => candidate.id === item.video_id);
           return lecture ? [{
             resultId: item.chunk_id,
@@ -88,7 +91,8 @@ export function SearchPage({ lectures, onOpenLecture }: SearchPageProps) {
             timeRange: `${formatTimestamp(item.start_ms)} – ${formatTimestamp(item.end_ms)}`,
             preview: item.text,
           }] : [];
-        })))
+          }));
+        })
         .catch((error) => {
           if (!controller.signal.aborted) {
             setRemoteResults([]);
@@ -113,7 +117,7 @@ export function SearchPage({ lectures, onOpenLecture }: SearchPageProps) {
       <section className="search-results-panel" aria-labelledby="search-title">
         <label className="search-input" id="search-title">
           <Icon name="search" />
-          <input value={query} onChange={(event) => updateQuery(event.target.value)} placeholder="在课程转写和摘要中搜索" />
+          <input aria-label="搜索课程" value={query} onChange={(event) => updateQuery(event.target.value)} placeholder="在课程转写和摘要中搜索" />
           {query && <button type="button" onClick={() => updateQuery("")} aria-label="清除搜索"><Icon name="close" /></button>}
         </label>
         <p className="result-count">{isSearching ? "正在检索…" : `${matchingResults.length} 条结果`}</p>
@@ -135,7 +139,7 @@ export function SearchPage({ lectures, onOpenLecture }: SearchPageProps) {
       <aside className={`search-preview ${selectedResult ? "" : "is-empty"}`} aria-live="polite">
         {selectedResult ? (
           <>
-            <VideoArtwork visual={selectedResult.lecture.visual} className="preview-artwork" />
+            <VideoArtwork visual={selectedResult.lecture.visual} isRemote={selectedResult.lecture.isRemote} className="preview-artwork" />
             <h1>{selectedResult.lecture.title}</h1>
             <p>{selectedResult.lecture.source} · {selectedResult.lecture.year}</p>
             <strong>{selectedResult.timeRange}</strong>

@@ -11,7 +11,7 @@ export function SearchResultCard({ result, selected, onSelect }: SearchResultCar
   const { lecture } = result;
   return (
     <button className={`search-result ${selected ? "is-selected" : ""}`} type="button" onClick={onSelect}>
-      <VideoArtwork visual={lecture.visual} duration={lecture.duration} className="result-artwork" />
+      <VideoArtwork visual={lecture.visual} isRemote={lecture.isRemote} duration={lecture.duration} className="result-artwork" />
       <span className="result-copy">
         <strong>{lecture.title}</strong>
         <small>{lecture.source} · {lecture.year}</small>

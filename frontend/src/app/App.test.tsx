@@ -1,12 +1,13 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { checkBackend, listVideos } from "../lib/api";
+import { checkBackend, getTranscript, listVideos } from "../lib/api";
+import { saveLocal } from "../lib/persistence";
 import App from "./App";
 
 vi.mock("../lib/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../lib/api")>();
-  return { ...actual, checkBackend: vi.fn(), listVideos: vi.fn() };
+  return { ...actual, checkBackend: vi.fn(), listVideos: vi.fn(), getTranscript: vi.fn() };
 });
 
 describe("App persisted library", () => {
@@ -35,5 +36,19 @@ describe("App persisted library", () => {
 
     expect(await screen.findAllByText("persisted-lesson")).toHaveLength(2);
     expect(screen.queryByText(/Transformer 内部机制/)).toBeNull();
+  });
+
+  it("restores the selected older video instead of opening the newest upload", async () => {
+    const existing = await listVideos();
+    vi.mocked(listVideos).mockResolvedValue([
+      { ...existing[0], video_id: "22222222-2222-4222-8222-222222222222", original_name: "newest.mp4" },
+      existing[0],
+    ]);
+    vi.mocked(getTranscript).mockResolvedValue([]);
+    saveLocal("active-video", existing[0].video_id);
+    window.location.hash = "#reader";
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: "persisted-lesson" })).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "newest" })).toBeNull();
   });
 });

@@ -61,6 +61,23 @@ export interface ApiAnswer {
   created_at: string;
 }
 
+export interface ApiConversation {
+  conversation_id: string;
+  video_id: string;
+  created_at: string;
+  messages: Array<{
+    message_id: string;
+    role: "user" | "assistant";
+    content: string;
+    evidence: ApiEvidence[];
+    created_at: string;
+  }>;
+}
+
+export function getConversation(id: string, signal?: AbortSignal): Promise<ApiConversation> {
+  return requestJson(`/conversations/${id}`, { signal });
+}
+
 interface ApiErrorBody {
   error_code?: string;
   message?: string;
