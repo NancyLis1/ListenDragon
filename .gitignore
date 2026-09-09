@@ -21,6 +21,7 @@ data/uploads/*
 data/artifacts/*
 data/indexes/*
 data/models/*
+data/evaluation/*
 data/*.db
 data/*.db-wal
 data/*.db-shm
