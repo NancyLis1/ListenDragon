@@ -33,6 +33,7 @@ export function ChatPanel({ lecture, onSeek, disabled = false }: ChatPanelProps)
   const [isRestoring, setIsRestoring] = useState(Boolean(lecture.isRemote && readSaved(storageKey)));
   const [restoreFailed, setRestoreFailed] = useState(false);
   const mounted = useRef(true);
+  const messagesRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     mounted.current = true;
@@ -79,6 +80,11 @@ export function ChatPanel({ lecture, onSeek, disabled = false }: ChatPanelProps)
       if (mounted.current) setError(requestError instanceof Error ? requestError.message : "新建会话失败。");
     } finally { if (mounted.current) setIsSending(false); }
   };
+
+  useEffect(() => {
+    const messageList = messagesRef.current;
+    if (messageList) messageList.scrollTop = messageList.scrollHeight;
+  }, [messages, isSending, error]);
 
   const submitQuestion = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -131,7 +137,7 @@ export function ChatPanel({ lecture, onSeek, disabled = false }: ChatPanelProps)
       {analysisChanged && <p className="chat-empty">视频分析已更新，下方历史回答可能基于旧材料。新问题会使用当前分析结果，也可新建会话。</p>}
       {disabled && <p className="chat-empty">正在完成音画分析，请稍候…</p>}
       {isRestoring && <p className="chat-empty">正在恢复会话…</p>}
-      <div className="chat-messages" aria-live="polite">
+      <div className="chat-messages" aria-live="polite" ref={messagesRef}>
         {messages.length === 0 && <p className="chat-empty">{lecture.isRemote ? "问题将基于已获取的语音与画面证据回答。查看“画面”页确认分析范围；未分析的画面不作为依据。" : "输入问题体验样例问答。"}</p>}
         {messages.map((message) => (
           <article className={`chat-message chat-message--${message.role}`} key={message.id}>

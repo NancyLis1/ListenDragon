@@ -1,12 +1,12 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getVideo, uploadVideo, type ApiVideo } from "../../lib/api";
+import { getUploadLimits, getVideo, uploadVideo, type ApiVideo } from "../../lib/api";
 import { UploadPage } from "./UploadPage";
 
 vi.mock("../../lib/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../lib/api")>();
-  return { ...actual, getVideo: vi.fn(), uploadVideo: vi.fn() };
+  return { ...actual, getUploadLimits: vi.fn(), getVideo: vi.fn(), uploadVideo: vi.fn() };
 });
 
 const readyVideo: ApiVideo = {
@@ -25,7 +25,11 @@ describe("UploadPage", () => {
   beforeEach(() => {
     Object.defineProperty(URL, "createObjectURL", { configurable: true, value: vi.fn(() => "blob:test") });
     Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: vi.fn() });
-    vi.spyOn(HTMLMediaElement.prototype, "load").mockImplementation(() => undefined);
+    vi.spyOn(HTMLMediaElement.prototype, "load").mockImplementation(function (this: HTMLMediaElement) {
+      Object.defineProperty(this, "duration", { configurable: true, value: 60 });
+      this.dispatchEvent(new Event("loadedmetadata"));
+    });
+    vi.mocked(getUploadLimits).mockResolvedValue({ max_upload_mb: 500, max_video_minutes: 60 });
     vi.mocked(uploadVideo).mockResolvedValue({ video_id: readyVideo.video_id, state: "QUEUED" });
     vi.mocked(getVideo).mockResolvedValue(readyVideo);
   });
@@ -46,6 +50,7 @@ describe("UploadPage", () => {
 
   it("does not invent a duration or round tiny invalid files up to one megabyte", async () => {
     vi.useFakeTimers();
+    vi.mocked(HTMLMediaElement.prototype.load).mockImplementationOnce(() => undefined);
     const { container } = render(<UploadPage backendStatus="online" onComplete={vi.fn()} />);
     fireEvent.change(container.querySelector('input[type="file"]')!, {
       target: { files: [new File(["bad"], "invalid.mp4", { type: "video/mp4" })] },
@@ -61,7 +66,22 @@ describe("UploadPage", () => {
     const input = container.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
 
-    expect(screen.getByText("当前文件超过 500 MB 限制，请选择更小的视频。")).toBeTruthy();
+    expect(screen.getByText("视频上传失败：文件超过 500 MB 限制，请选择更小的视频。")).toBeTruthy();
+  });
+
+  it("rejects videos over the configured duration before upload", async () => {
+    vi.mocked(HTMLMediaElement.prototype.load).mockImplementationOnce(function (this: HTMLMediaElement) {
+      Object.defineProperty(this, "duration", { configurable: true, value: 60 * 60 + 1 });
+      this.dispatchEvent(new Event("loadedmetadata"));
+    });
+    const { container } = render(<UploadPage backendStatus="online" onComplete={() => undefined} />);
+    fireEvent.change(container.querySelector('input[type="file"]')!, {
+      target: { files: [new File(["video"], "long.mp4", { type: "video/mp4" })] },
+    });
+
+    expect(await screen.findByText("视频上传失败：视频时长超过 60 分钟限制，请选择更短的视频。")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "开始解析" }).hasAttribute("disabled")).toBe(true);
+    expect(uploadVideo).not.toHaveBeenCalled();
   });
 
   it("uploads, polls the backend and returns the ready video", async () => {
@@ -70,6 +90,7 @@ describe("UploadPage", () => {
     const file = new File(["video"], "lesson.mp4", { type: "video/mp4" });
     const input = container.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
+    await waitFor(() => expect(screen.getByRole("button", { name: "开始解析" }).hasAttribute("disabled")).toBe(false));
     fireEvent.click(screen.getByRole("button", { name: "开始解析" }));
 
     await waitFor(() => expect(onComplete).toHaveBeenCalledWith(readyVideo));
@@ -88,17 +109,19 @@ describe("UploadPage", () => {
     fireEvent.change(container.querySelector('input[type="file"]')!, {
       target: { files: [new File(["video"], "lesson.mp4", { type: "video/mp4" })] },
     });
+    await act(async () => undefined);
     fireEvent.click(screen.getByRole("button", { name: "开始解析" }));
 
     await act(async () => { await vi.advanceTimersByTimeAsync(1100); });
     expect(onComplete).toHaveBeenCalledWith(readyVideo);
   });
 
-  it("does not upload while the backend is offline", () => {
+  it("does not upload while the backend is offline", async () => {
     const { container } = render(<UploadPage backendStatus="offline" onComplete={() => undefined} />);
     fireEvent.change(container.querySelector('input[type="file"]')!, {
       target: { files: [new File(["video"], "lesson.mp4", { type: "video/mp4" })] },
     });
+    await waitFor(() => expect(screen.getByRole("button", { name: "开始解析" }).hasAttribute("disabled")).toBe(false));
     fireEvent.click(screen.getByRole("button", { name: "开始解析" }));
 
     expect(screen.getByText("后端服务未连接，请启动 API 和 Worker 后重试。")).toBeTruthy();
@@ -111,10 +134,11 @@ describe("UploadPage", () => {
     const input = container.querySelector('input[type="file"]') as HTMLInputElement;
     const file = new File(["video"], "silent.mp4", { type: "video/mp4" });
     fireEvent.change(input, { target: { files: [file] } });
+    await waitFor(() => expect(screen.getByRole("button", { name: "开始解析" }).hasAttribute("disabled")).toBe(false));
     fireEvent.click(screen.getByRole("button", { name: "开始解析" }));
     expect(await screen.findByText(/未识别到可转写的语音/)).toBeTruthy();
     expect(input.value).toBe("");
     fireEvent.change(input, { target: { files: [file] } });
-    expect(screen.getByRole("button", { name: "开始解析" })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: "开始解析" })).toBeTruthy();
   });
 });

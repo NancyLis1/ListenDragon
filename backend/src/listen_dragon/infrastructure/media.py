@@ -29,14 +29,7 @@ class FfmpegMediaExtractor:
         self.timeout_seconds = timeout_seconds
 
     def extract_audio(self, video: Path, output: Path) -> ExtractedMedia:
-        duration_seconds = self._probe_duration(video)
-        if duration_seconds <= 0:
-            raise MediaProcessingError("INVALID_MEDIA", "Video duration must be positive")
-        if duration_seconds > self.max_video_seconds:
-            raise MediaProcessingError(
-                "VIDEO_TOO_LONG",
-                f"Video exceeds the {self.max_video_seconds // 60} minute limit",
-            )
+        duration_seconds = self.probe_duration(video)
 
         output.parent.mkdir(parents=True, exist_ok=True)
         temporary_output = output.with_suffix(".wav.extracting")
@@ -85,6 +78,18 @@ class FfmpegMediaExtractor:
         finally:
             temporary_output.unlink(missing_ok=True)
         return ExtractedMedia(output, max(1, round(duration_seconds * 1000)))
+
+    def probe_duration(self, video: Path) -> float:
+        """Validate media metadata and return its duration in seconds."""
+        duration_seconds = self._probe_duration(video)
+        if duration_seconds <= 0:
+            raise MediaProcessingError("INVALID_MEDIA", "Video duration must be positive")
+        if duration_seconds > self.max_video_seconds:
+            raise MediaProcessingError(
+                "VIDEO_TOO_LONG",
+                f"Video exceeds the {self.max_video_seconds // 60} minute limit",
+            )
+        return duration_seconds
 
     def _probe_duration(self, video: Path) -> float:
         command = [

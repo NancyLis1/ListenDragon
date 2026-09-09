@@ -164,6 +164,7 @@ class SqliteJobRepository:
         size_bytes: int,
         sha256: str,
         source_path: Path,
+        duration_ms: int | None = None,
     ) -> VideoJobView:
         now = datetime.now(UTC).isoformat()
         job_id = uuid4()
@@ -172,14 +173,16 @@ class SqliteJobRepository:
             connection.execute(
                 """
                 INSERT INTO video (
-                    id, original_name, mime, size_bytes, sha256, source_path, status, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    id, original_name, mime, size_bytes, duration_ms, sha256, source_path,
+                    status, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     str(video_id),
                     original_name,
                     mime,
                     size_bytes,
+                    duration_ms,
                     sha256,
                     str(source_path),
                     JobState.queued.value,
