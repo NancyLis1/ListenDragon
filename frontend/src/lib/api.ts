@@ -5,6 +5,15 @@ const healthUrl = apiBase.replace(/\/api\/v1\/?$/, "/health/live");
 export type BackendStatus = "checking" | "online" | "offline";
 export type JobState = "QUEUED" | "EXTRACTING" | "TRANSCRIBING" | "VISUALIZING" | "CHUNKING" | "INDEXING" | "READY" | "FAILED";
 
+export interface ApiUploadLimits {
+  max_upload_bytes: number;
+  max_video_minutes: number;
+}
+
+export function getUploadLimits(signal?: AbortSignal): Promise<ApiUploadLimits> {
+  return requestJson("/videos/upload-limits", { signal, cache: "no-store" });
+}
+
 export interface ApiVisualAnalysis {
   version?: string;
   analyzed_at?: string | null;

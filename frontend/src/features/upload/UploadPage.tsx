@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from "r
 
 import { Icon } from "../../components/Icon";
 import { processingSteps } from "../../data/mockLectures";
-import { ApiError, getVideo, uploadVideo, type ApiVideo, type BackendStatus, type JobState } from "../../lib/api";
+import { ApiError, getUploadLimits, getVideo, uploadVideo, type ApiUploadLimits, type ApiVideo, type BackendStatus, type JobState } from "../../lib/api";
 import type { ProcessingStep } from "../../types/lecture";
 import { formatTimestamp } from "../reader/LectureVideo";
 import { ProcessingSteps } from "./ProcessingSteps";
@@ -14,7 +14,6 @@ interface UploadPageProps {
 
 const acceptedTypes = ["video/mp4", "video/webm", "video/quicktime", "video/x-matroska"];
 const acceptedExtensions = [".mp4", ".webm", ".mov", ".mkv"];
-const maxFileSize = 500 * 1024 * 1024;
 const fallbackDurationMs = 0;
 const processingErrors: Record<string, string> = {
   ASR_FAILED: "语音识别失败，请检查服务端模型是否已下载及模型服务是否可用，然后重新选择视频上传。",
@@ -22,9 +21,11 @@ const processingErrors: Record<string, string> = {
   ASR_EMPTY: "未识别到可转写的语音，请选择包含清晰讲话的视频。",
   INVALID_MEDIA: "文件无法识别为有效视频，请检查文件是否损坏。",
   FFMPEG_FAILED: "音频提取失败，请确认视频包含可用音轨。",
-  VIDEO_TOO_LONG: "视频超过服务端时长限制，请截取较短片段后上传。",
   INDEX_BUILD_FAILED: "检索索引构建失败，请检查服务端模型及存储后重新上传。",
 };
+function durationLimitMessage(limits: ApiUploadLimits | null) {
+  return `视频时长超限${limits ? `：最长支持 ${limits.max_video_minutes} 分钟` : ""}，请截取较短片段后上传。`;
+}
 const stateStep: Partial<Record<JobState, number>> = {
   QUEUED: 1,
   EXTRACTING: 1,
@@ -66,7 +67,7 @@ export function readVideoDuration(file: File): Promise<number> {
     video.preload = "metadata";
     video.onloadedmetadata = () => finish(
       Number.isFinite(video.duration) && video.duration > 0
-        ? Math.round(video.duration * 1000)
+        ? video.duration * 1000
         : fallbackDurationMs,
     );
     video.onerror = () => finish(fallbackDurationMs);
@@ -96,6 +97,11 @@ function stepsForJob(file: File | null, job?: ApiVideo): ProcessingStep[] {
       description: index === 0 && file ? `${file.name} · ${formatFileSize(file.size)}` : step.description,
       state,
       detail,
+      ...(job?.error_code === "VIDEO_TOO_LONG" && index === 1 ? {
+        title: "视频时长校验",
+        description: "视频超过服务端时长限制",
+        detail: "未通过",
+      } : {}),
     };
   });
 }
@@ -117,40 +123,69 @@ function waitForPoll(signal: AbortSignal) {
 export function UploadPage({ backendStatus, onComplete }: UploadPageProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const controllerRef = useRef<AbortController | null>(null);
+  const selectionRef = useRef(0);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [durationMs, setDurationMs] = useState(fallbackDurationMs);
   const [steps, setSteps] = useState<ProcessingStep[]>(processingSteps);
-  const [message, setMessage] = useState("支持 MP4、WebM、MOV、MKV；单文件不超过 500 MB。");
+  const [message, setMessage] = useState("支持 MP4、WebM、MOV、MKV。");
+  const [limits, setLimits] = useState<ApiUploadLimits | null>(null);
+  const [limitsError, setLimitsError] = useState("");
+  const [limitsRequest, setLimitsRequest] = useState(0);
+  const [readingDuration, setReadingDuration] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [jobId, setJobId] = useState<string>();
   const [canRetry, setCanRetry] = useState(false);
 
-  useEffect(() => () => controllerRef.current?.abort(), []);
+  useEffect(() => () => {
+    controllerRef.current?.abort();
+    selectionRef.current += 1;
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLimits(null);
+    setLimitsError("");
+    if (backendStatus === "online") {
+      void getUploadLimits(controller.signal).then((value) => {
+        if (!controller.signal.aborted) setLimits(value);
+      }).catch(() => {
+        if (!controller.signal.aborted) setLimitsError("无法获取上传限制，请确认后端已更新后重试。");
+      });
+    }
+    return () => controller.abort();
+  }, [backendStatus, limitsRequest]);
+
+  const validationMessage = !selectedFile || !limits ? ""
+    : selectedFile.size > limits.max_upload_bytes
+      ? `当前文件超过 ${formatFileSize(limits.max_upload_bytes)} 限制，请选择更小的视频。`
+      : durationMs > limits.max_video_minutes * 60_000 ? durationLimitMessage(limits) : "";
 
   const selectFile = (file?: File) => {
+    if (!file) return;
+    const selection = ++selectionRef.current;
     controllerRef.current?.abort();
     setIsProcessing(false);
     setCanRetry(false);
     setJobId(undefined);
-    if (!file) return;
+    setReadingDuration(false);
     if (!hasAcceptedFormat(file)) {
       setSelectedFile(null);
       setSteps(stepsForJob(null));
       setMessage("请选择 MP4、WebM、MOV 或 MKV 格式的视频文件。");
       return;
     }
-    if (file.size > maxFileSize) {
-      setSelectedFile(null);
-      setSteps(stepsForJob(null));
-      setMessage("当前文件超过 500 MB 限制，请选择更小的视频。");
-      return;
-    }
     setSelectedFile(file);
     setDurationMs(fallbackDurationMs);
     setSteps(stepsForJob(file));
     setMessage(`已选择 ${file.name}（${formatFileSize(file.size)}），可以开始上传。`);
-    void readVideoDuration(file).then(setDurationMs);
+    setReadingDuration(true);
+    void readVideoDuration(file).then((value) => {
+      if (selection !== selectionRef.current) return;
+      setDurationMs(value);
+      setReadingDuration(false);
+      if (!value) setMessage("未能读取视频时长，上传后由服务端校验。");
+    });
   };
 
   const monitorJob = async (id: string, controller: AbortController) => {
@@ -165,7 +200,9 @@ export function UploadPage({ backendStatus, onComplete }: UploadPageProps) {
       }
       if (job.state === "FAILED") {
         const code = job.error_code || "UNKNOWN";
-        throw new ApiError(`${processingErrors[code] || "视频处理失败，请检查服务端日志后重新上传。"}（${code}）`, 409, code);
+        const reason = code === "VIDEO_TOO_LONG" ? durationLimitMessage(limits)
+          : processingErrors[code] || "视频处理失败，请检查服务端日志后重新上传。";
+        throw new ApiError(`${reason}（${code}）`, 409, code);
       }
       await waitForPoll(controller.signal);
     }
@@ -194,6 +231,7 @@ export function UploadPage({ backendStatus, onComplete }: UploadPageProps) {
       setMessage("后端服务未连接，请启动 API 和 Worker 后重试。");
       return;
     }
+    if (!limits || readingDuration || validationMessage) return;
     controllerRef.current?.abort();
     const controller = new AbortController();
     controllerRef.current = controller;
@@ -242,10 +280,14 @@ export function UploadPage({ backendStatus, onComplete }: UploadPageProps) {
         >
           <Icon name="upload" className="drop-icon" />
           <h2>{selectedFile ? selectedFile.name : "拖拽视频文件到这里"}</h2>
-          <p aria-live="polite">{message}</p>
+          <p aria-live="polite">{validationMessage || (readingDuration ? "正在校验视频时长…" : message)}</p>
+          <p aria-live="polite">{limits
+            ? `单文件不超过 ${formatFileSize(limits.max_upload_bytes)}；视频最长 ${limits.max_video_minutes} 分钟。`
+            : limitsError || (backendStatus === "online" ? "正在获取上传限制…" : "连接后端后可获取上传限制。")}</p>
+          {limitsError && <button className="outline-button" type="button" onClick={() => setLimitsRequest((value) => value + 1)}>重试获取限制</button>}
           <input ref={inputRef} type="file" accept={acceptedTypes.join(",")} onChange={handleInput} />
           <button className="outline-button" type="button" onClick={() => inputRef.current?.click()} disabled={isProcessing}>选择文件</button>
-          {selectedFile && !jobId && <button className="primary-button upload-submit" type="button" onClick={() => void beginProcessing()} disabled={isProcessing}>{isProcessing ? "正在上传…" : "开始解析"}</button>}
+          {selectedFile && !jobId && <button className="primary-button upload-submit" type="button" onClick={() => void beginProcessing()} disabled={isProcessing || readingDuration || !limits || Boolean(validationMessage)}>{isProcessing ? "正在上传…" : "开始解析"}</button>}
           {jobId && canRetry && <button className="primary-button upload-submit" type="button" onClick={() => void runMonitor(jobId)} disabled={isProcessing}>继续查询状态</button>}
         </section>
         <ProcessingSteps steps={steps} />

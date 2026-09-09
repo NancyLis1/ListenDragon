@@ -14,6 +14,7 @@ from listen_dragon.domain.models import (
     JobState,
     TranscriptSegmentView,
     TranscriptView,
+    UploadLimitsView,
     VideoJobAccepted,
     VideoListView,
     VideoView,
@@ -38,6 +39,15 @@ def get_job_repository(
     repository = SqliteJobRepository(sqlite_path_from_url(settings.database_url))
     repository.initialize()
     return repository
+
+
+@router.get("/upload-limits", response_model=UploadLimitsView)
+def get_upload_limits(settings: Annotated[Settings, Depends(get_settings)]) -> UploadLimitsView:
+    # Explicit public fields only; never serialize the application settings.
+    return UploadLimitsView(
+        max_upload_bytes=settings.max_upload_mb * 1024 * 1024,
+        max_video_minutes=settings.max_video_minutes,
+    )
 
 
 @router.post("", response_model=VideoJobAccepted, status_code=status.HTTP_202_ACCEPTED)

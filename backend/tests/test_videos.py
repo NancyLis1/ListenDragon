@@ -1,4 +1,6 @@
 import hashlib
+import json
+import subprocess
 from pathlib import Path
 from uuid import UUID, uuid4
 
@@ -8,9 +10,11 @@ import pytest
 from listen_dragon.api.videos import get_job_repository
 from listen_dragon.core.config import Settings, get_settings
 from listen_dragon.domain.models import JobState, VisualAnalysisView, VisualObservation
+from listen_dragon.infrastructure.media import FfmpegMediaExtractor
 from listen_dragon.infrastructure.sqlite_jobs import SqliteJobRepository
 from listen_dragon.main import app
 from listen_dragon.services.contracts import TranscriptSegment
+from listen_dragon.worker import process_next_job
 
 
 @pytest.fixture
@@ -27,6 +31,44 @@ def upload_context(tmp_path: Path):
     app.dependency_overrides[get_job_repository] = lambda: repository
     yield settings, repository
     app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_upload_limits_expose_only_configured_public_limits(upload_context):
+    settings, _ = upload_context
+    settings.max_video_minutes = 7
+    settings.llm_api_key = "test-private-value"
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get("/api/v1/videos/upload-limits")
+    assert response.status_code == 200
+    assert response.json() == {"max_upload_bytes": 1024 * 1024, "max_video_minutes": 7}
+
+
+@pytest.mark.asyncio
+async def test_overlong_upload_fails_worker_validation_even_with_vision_enabled(upload_context, monkeypatch):
+    settings, repository = upload_context
+    calls = []
+
+    def probe(command, **kwargs):
+        calls.append(command)
+        return subprocess.CompletedProcess(command, 0, json.dumps({"format": {"duration": "60.1"}}))
+
+    monkeypatch.setattr(subprocess, "run", probe)
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        accepted = await client.post("/api/v1/videos", files={"file": ("long.mp4", b"video", "video/mp4")})
+        assert accepted.status_code == 202
+        video_id = UUID(accepted.json()["video_id"])
+        assert process_next_job(
+            repository=repository, extractor=FfmpegMediaExtractor(max_video_minutes=1),
+            recognizer=None, chunker=None, index_builder=None, visual_analyzer=object(),
+            data_root=Path(settings.data_root), worker_id="test", lease_seconds=60,
+        )
+        response = await client.get(f"/api/v1/videos/{video_id}")
+    assert response.status_code == 200
+    assert response.json()["state"] == "FAILED"
+    assert response.json()["error_code"] == "VIDEO_TOO_LONG"
+    assert len(calls) == 1 and calls[0][0] == "ffprobe"
+    assert not (Path(settings.data_root) / "artifacts" / str(video_id) / "audio.wav").exists()
 
 
 @pytest.mark.asyncio

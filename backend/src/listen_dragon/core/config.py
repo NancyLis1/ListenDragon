@@ -11,8 +11,8 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     database_url: str = "sqlite:////data/listendragon.db"
     data_root: str = "/data"
-    max_upload_mb: int = 500
-    max_video_minutes: int = 60
+    max_upload_mb: int = Field(default=500, gt=0)
+    max_video_minutes: int = Field(default=60, gt=0)
     worker_poll_seconds: float = 2.0
     worker_concurrency: int = 1
     worker_video_id: str | None = None

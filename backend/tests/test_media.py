@@ -71,6 +71,24 @@ def test_ffmpeg_extractor_rejects_overlong_video(
     assert error.value.error_code == "VIDEO_TOO_LONG"
 
 
+def test_ffmpeg_extractor_accepts_exact_duration_limit(tmp_path, monkeypatch):
+    output = tmp_path / "audio.wav"
+    calls = []
+
+    def run(command, **kwargs):
+        calls.append(command)
+        if command[0] == "ffprobe":
+            return subprocess.CompletedProcess(command, 0, json.dumps({"format": {"duration": "3600"}}))
+        output.with_suffix(".wav.extracting").write_bytes(b"audio")
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr(subprocess, "run", run)
+    result = FfmpegMediaExtractor(max_video_minutes=60).extract_audio(tmp_path / "video.mp4", output)
+    assert result.duration_ms == 3_600_000
+    assert output.read_bytes() == b"audio"
+    assert len(calls) == 2
+
+
 @pytest.mark.parametrize("phase", ["probe", "extract"])
 def test_media_errors_survive_non_locale_stderr(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, phase: str,

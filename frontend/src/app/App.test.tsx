@@ -7,7 +7,7 @@ import App from "./App";
 
 vi.mock("../lib/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../lib/api")>();
-  return { ...actual, checkBackend: vi.fn(), listVideos: vi.fn(), getTranscript: vi.fn(), getVisualAnalysis: vi.fn().mockResolvedValue({ status: "not_requested", observations: [] }) };
+  return { ...actual, checkBackend: vi.fn(), listVideos: vi.fn(), getTranscript: vi.fn(), getUploadLimits: vi.fn().mockResolvedValue({ max_upload_bytes: 500 * 1024 * 1024, max_video_minutes: 60 }), getVisualAnalysis: vi.fn().mockResolvedValue({ status: "not_requested", observations: [] }) };
 });
 
 describe("App persisted library", () => {

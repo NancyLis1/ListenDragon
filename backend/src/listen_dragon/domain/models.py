@@ -18,6 +18,11 @@ class JobState(StrEnum):
     failed = "FAILED"
 
 
+class UploadLimitsView(BaseModel):
+    max_upload_bytes: int = Field(gt=0)
+    max_video_minutes: int = Field(gt=0)
+
+
 class VideoJobAccepted(BaseModel):
     video_id: UUID
     state: JobState
