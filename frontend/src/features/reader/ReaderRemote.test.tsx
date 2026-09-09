@@ -35,6 +35,7 @@ const remoteLecture: LectureDetail = {
 
 describe("ReaderPage remote data", () => {
   beforeEach(() => {
+    vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
     vi.mocked(getVisualAnalysis).mockResolvedValue({ status: "not_requested", observations: [], error_code: null, audio_warning: null, sampling_note: "仅分析抽样画面" });
     vi.mocked(getTranscript).mockResolvedValue([
       { seq: 0, start_ms: 1000, end_ms: 3000, text: "真实转写片段", language: "zh" },
@@ -86,6 +87,7 @@ describe("ReaderPage remote data", () => {
     expect(askQuestion).toHaveBeenCalledWith("conversation-1", "视频讲了什么？");
     fireEvent.click(screen.getByRole("button", { name: "跳到 0:01" }));
     expect(screen.getByRole("slider", { name: "播放进度" }).getAttribute("value")).toBe("1");
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(1);
 
     fireEvent.change(input, { target: { value: "再解释一下" } });
     fireEvent.click(screen.getByRole("button", { name: "发送问题" }));

@@ -35,9 +35,38 @@ export function LectureVideo({ lecture, seekRequest, onTimeChange }: LectureVide
   };
 
   useEffect(() => {
-    updateTime(seekRequest.timeMs);
-    if (videoRef.current) videoRef.current.currentTime = seekRequest.timeMs / 1000;
-  }, [seekRequest.token]);
+    const timeMs = Math.max(0, Math.min(seekRequest.timeMs, lecture.durationMs));
+    setCurrentTimeMs(timeMs);
+    onTimeChange(timeMs);
+    const video = videoRef.current;
+    // Token 0 initializes the reader; only an explicit timestamp click starts playback.
+    const shouldPlay = seekRequest.token > 0;
+    if (!video) {
+      setIsPlaying(shouldPlay);
+      return;
+    }
+
+    let cancelled = false;
+    const seek = () => { video.currentTime = timeMs / 1000; };
+    if (video.readyState >= 1) seek();
+    else video.addEventListener("loadedmetadata", seek, { once: true });
+
+    if (shouldPlay) {
+      setPlaybackError("");
+      // Request playback immediately; a late metadata event applies the pending seek.
+      void video.play().catch((error: unknown) => {
+        if (cancelled) return;
+        setIsPlaying(false);
+        setPlaybackError(error instanceof DOMException && error.name === "NotAllowedError"
+          ? "浏览器阻止了自动播放，请点击播放按钮继续。"
+          : "视频自动播放失败，请检查网络或视频格式后点击播放重试。");
+      });
+    }
+    return () => {
+      cancelled = true;
+      video.removeEventListener("loadedmetadata", seek);
+    };
+  }, [seekRequest.token, seekRequest.timeMs, lecture.id, lecture.videoUrl, lecture.durationMs, onTimeChange]);
 
   useEffect(() => {
     if (lecture.videoUrl || !isPlaying) return;
