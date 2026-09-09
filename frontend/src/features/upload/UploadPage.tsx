@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type DragEvent } from "r
 
 import { Icon } from "../../components/Icon";
 import { processingSteps } from "../../data/mockLectures";
-import { ApiError, getVideo, uploadVideo, type ApiVideo, type BackendStatus, type JobState } from "../../lib/api";
+import { ApiError, getUploadLimits, getVideo, uploadVideo, type ApiUploadLimits, type ApiVideo, type BackendStatus, type JobState } from "../../lib/api";
 import type { ProcessingStep } from "../../types/lecture";
 import { formatTimestamp } from "../reader/LectureVideo";
 import { ProcessingSteps } from "./ProcessingSteps";
@@ -14,7 +14,7 @@ interface UploadPageProps {
 
 const acceptedTypes = ["video/mp4", "video/webm", "video/quicktime", "video/x-matroska"];
 const acceptedExtensions = [".mp4", ".webm", ".mov", ".mkv"];
-const maxFileSize = 500 * 1024 * 1024;
+const fallbackLimits: ApiUploadLimits = { max_upload_mb: 500, max_video_minutes: 60 };
 const fallbackDurationMs = 60_000;
 const stateStep: Partial<Record<JobState, number>> = {
   QUEUED: 1,
@@ -101,18 +101,47 @@ function waitForPoll(signal: AbortSignal) {
 export function UploadPage({ backendStatus, onComplete }: UploadPageProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const controllerRef = useRef<AbortController | null>(null);
+  const selectionTokenRef = useRef(0);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [durationMs, setDurationMs] = useState(fallbackDurationMs);
+  const [durationMs, setDurationMs] = useState<number | null>(null);
+  const [limits, setLimits] = useState<ApiUploadLimits>(fallbackLimits);
   const [steps, setSteps] = useState<ProcessingStep[]>(processingSteps);
-  const [message, setMessage] = useState("支持 MP4、WebM、MOV、MKV；单文件不超过 500 MB。");
+  const [message, setMessage] = useState("支持 MP4、WebM、MOV、MKV；单文件不超过 500 MB，视频不超过 60 分钟。");
   const [isProcessing, setIsProcessing] = useState(false);
   const [jobId, setJobId] = useState<string>();
   const [canRetry, setCanRetry] = useState(false);
 
   useEffect(() => () => controllerRef.current?.abort(), []);
 
+  useEffect(() => {
+    if (backendStatus !== "online") return;
+    const controller = new AbortController();
+    void getUploadLimits(controller.signal)
+      .then(setLimits)
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [backendStatus]);
+
+  const maxFileSize = limits.max_upload_mb * 1024 * 1024;
+  const isTooLarge = Boolean(selectedFile && selectedFile.size > maxFileSize);
+  const isTooLong = durationMs !== null && durationMs > limits.max_video_minutes * 60_000;
+
+  useEffect(() => {
+    if (!selectedFile || isProcessing || jobId) return;
+    if (isTooLarge) {
+      setMessage(`视频上传失败：文件超过 ${limits.max_upload_mb} MB 限制。`);
+    } else if (durationMs === null) {
+      setMessage("正在读取视频时长…");
+    } else if (isTooLong) {
+      setMessage(`视频上传失败：视频时长超过 ${limits.max_video_minutes} 分钟限制，请选择更短的视频。`);
+    } else {
+      setMessage(`已选择 ${selectedFile.name}（${formatFileSize(selectedFile.size)}），可以开始上传。`);
+    }
+  }, [durationMs, isProcessing, isTooLarge, isTooLong, jobId, limits, selectedFile]);
+
   const selectFile = (file?: File) => {
+    const selectionToken = ++selectionTokenRef.current;
     controllerRef.current?.abort();
     setIsProcessing(false);
     setCanRetry(false);
@@ -120,21 +149,25 @@ export function UploadPage({ backendStatus, onComplete }: UploadPageProps) {
     if (!file) return;
     if (!hasAcceptedFormat(file)) {
       setSelectedFile(null);
+      setDurationMs(null);
       setSteps(stepsForJob(null));
       setMessage("请选择 MP4、WebM、MOV 或 MKV 格式的视频文件。");
       return;
     }
     if (file.size > maxFileSize) {
       setSelectedFile(null);
+      setDurationMs(null);
       setSteps(stepsForJob(null));
-      setMessage("当前文件超过 500 MB 限制，请选择更小的视频。");
+      setMessage(`视频上传失败：文件超过 ${limits.max_upload_mb} MB 限制，请选择更小的视频。`);
       return;
     }
     setSelectedFile(file);
-    setDurationMs(fallbackDurationMs);
+    setDurationMs(null);
     setSteps(stepsForJob(file));
-    setMessage(`已选择 ${file.name}（${formatFileSize(file.size)}），可以开始上传。`);
-    void readVideoDuration(file).then(setDurationMs);
+    setMessage("正在读取视频时长…");
+    void readVideoDuration(file).then((duration) => {
+      if (selectionTokenRef.current === selectionToken) setDurationMs(duration);
+    });
   };
 
   const monitorJob = async (id: string, controller: AbortController) => {
@@ -148,6 +181,13 @@ export function UploadPage({ backendStatus, onComplete }: UploadPageProps) {
         return;
       }
       if (job.state === "FAILED") {
+        if (job.error_code === "VIDEO_TOO_LONG") {
+          throw new ApiError(
+            `视频上传失败：视频时长超过 ${limits.max_video_minutes} 分钟限制。`,
+            422,
+            job.error_code,
+          );
+        }
         throw new ApiError(`视频处理失败：${job.error_code || "UNKNOWN"}`, 409, job.error_code || "PROCESSING_FAILED");
       }
       await waitForPoll(controller.signal);
@@ -172,7 +212,7 @@ export function UploadPage({ backendStatus, onComplete }: UploadPageProps) {
   };
 
   const beginProcessing = async () => {
-    if (!selectedFile || isProcessing) return;
+    if (!selectedFile || isProcessing || durationMs === null || isTooLarge || isTooLong) return;
     if (backendStatus === "offline") {
       setMessage("后端服务未连接，请启动 API 和 Worker 后重试。");
       return;
@@ -194,7 +234,8 @@ export function UploadPage({ backendStatus, onComplete }: UploadPageProps) {
       await monitorJob(accepted.video_id, controller);
     } catch (error) {
       if (controller.signal.aborted) return;
-      setMessage(error instanceof Error ? error.message : "视频上传失败，请稍后重试。");
+      const detail = error instanceof Error ? error.message : "请稍后重试。";
+      setMessage(acceptedId || detail.startsWith("视频上传失败") ? detail : `视频上传失败：${detail}`);
       setCanRetry(Boolean(acceptedId) && (error instanceof ApiError ? error.retryable || error.status === 0 : true));
     } finally {
       if (!controller.signal.aborted) setIsProcessing(false);
@@ -225,7 +266,7 @@ export function UploadPage({ backendStatus, onComplete }: UploadPageProps) {
           <p aria-live="polite">{message}</p>
           <input ref={inputRef} type="file" accept={acceptedTypes.join(",")} onChange={handleInput} />
           <button className="outline-button" type="button" onClick={() => inputRef.current?.click()} disabled={isProcessing}>选择文件</button>
-          {selectedFile && !jobId && <button className="primary-button upload-submit" type="button" onClick={() => void beginProcessing()} disabled={isProcessing}>{isProcessing ? "正在上传…" : "开始解析"}</button>}
+          {selectedFile && !jobId && <button className="primary-button upload-submit" type="button" onClick={() => void beginProcessing()} disabled={isProcessing || durationMs === null || isTooLarge || isTooLong}>{isProcessing ? "正在上传…" : durationMs === null ? "正在校验…" : "开始解析"}</button>}
           {jobId && canRetry && <button className="primary-button upload-submit" type="button" onClick={() => void runMonitor(jobId)} disabled={isProcessing}>继续查询状态</button>}
         </section>
         <ProcessingSteps steps={steps} />
@@ -235,9 +276,9 @@ export function UploadPage({ backendStatus, onComplete }: UploadPageProps) {
           <h2>文件</h2>
           <div className="file-preview"><span className="preview-play"><Icon name="play" /></span><span>Lecture Reader<br />后端持久化</span></div>
           <strong>{selectedFile?.name || "尚未选择视频"}</strong>
-          <p>{selectedFile ? `${formatFileSize(selectedFile.size)} · ${formatTimestamp(durationMs)}` : "选择文件后显示信息"}</p>
+          <p>{selectedFile ? `${formatFileSize(selectedFile.size)} · ${durationMs === null ? "正在读取时长" : formatTimestamp(durationMs)}` : "选择文件后显示信息"}</p>
         </section>
-        <section className="info-callout"><Icon name="info" /><p>视频会上传至配置的 ListenDragon 后端，并在处理完成后持久保存。</p></section>
+        <section className="info-callout"><Icon name="info" /><p>视频会上传至配置的 ListenDragon 后端，并在处理完成后持久保存。当前最大时长为 {limits.max_video_minutes} 分钟。</p></section>
         <p className={`backend-status backend-status--${backendStatus}`}>后端状态：{backendStatus === "online" ? "已连接" : backendStatus === "offline" ? "离线" : "检查中"}</p>
       </aside>
     </main>

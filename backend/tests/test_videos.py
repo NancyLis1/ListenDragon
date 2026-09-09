@@ -5,12 +5,23 @@ from uuid import UUID, uuid4
 import httpx
 import pytest
 
-from listen_dragon.api.videos import get_job_repository
+from listen_dragon.api.videos import get_job_repository, get_media_extractor
 from listen_dragon.core.config import Settings, get_settings
 from listen_dragon.domain.models import JobState
 from listen_dragon.infrastructure.sqlite_jobs import SqliteJobRepository
+from listen_dragon.infrastructure.media import MediaProcessingError
 from listen_dragon.main import app
 from listen_dragon.services.contracts import TranscriptSegment
+
+
+class ValidMediaProbe:
+    def probe_duration(self, _video: Path) -> float:
+        return 12.5
+
+
+class TooLongMediaProbe:
+    def probe_duration(self, _video: Path) -> float:
+        raise MediaProcessingError("VIDEO_TOO_LONG", "too long")
 
 
 @pytest.fixture
@@ -25,6 +36,7 @@ def upload_context(tmp_path: Path):
     repository.initialize()
     app.dependency_overrides[get_settings] = lambda: settings
     app.dependency_overrides[get_job_repository] = lambda: repository
+    app.dependency_overrides[get_media_extractor] = lambda: ValidMediaProbe()
     yield settings, repository
     app.dependency_overrides.clear()
 
@@ -49,6 +61,7 @@ async def test_upload_persists_file_and_job(upload_context) -> None:
     assert stored is not None
     assert stored.original_name == "lesson.mp4"
     assert stored.size_bytes == len(payload)
+    assert stored.duration_ms == 12_500
     assert stored.sha256 == hashlib.sha256(payload).hexdigest()
     assert stored.source_path.read_bytes() == payload
     assert stored.source_path.is_relative_to(Path(settings.data_root) / "uploads")
@@ -72,7 +85,7 @@ async def test_get_video_returns_persisted_status(upload_context) -> None:
         "original_name": "lesson.webm",
         "mime": "video/webm",
         "size_bytes": 5,
-        "duration_ms": None,
+        "duration_ms": 12_500,
         "created_at": response.json()["created_at"],
         "state": "QUEUED",
         "progress": 0,
@@ -123,6 +136,40 @@ async def test_upload_enforces_streaming_size_limit(upload_context) -> None:
     assert response.status_code == 413
     assert list((Path(settings.data_root) / "uploads").iterdir()) == []
     assert repository.get_video_job(uuid4()) is None
+
+
+@pytest.mark.asyncio
+async def test_upload_rejects_video_over_configured_duration(upload_context) -> None:
+    settings, repository = upload_context
+    settings.max_video_minutes = 60
+    app.dependency_overrides[get_media_extractor] = lambda: TooLongMediaProbe()
+    transport = httpx.ASGITransport(app=app)
+
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post(
+            "/api/v1/videos",
+            files={"file": ("long.mp4", b"video", "video/mp4")},
+        )
+
+    assert response.status_code == 422
+    assert response.json()["error_code"] == "VIDEO_TOO_LONG"
+    assert response.json()["message"] == "视频时长超过 60 分钟上传限制。"
+    assert list((Path(settings.data_root) / "uploads").iterdir()) == []
+    assert repository.list_videos() == []
+
+
+@pytest.mark.asyncio
+async def test_upload_limits_reflect_server_settings(upload_context) -> None:
+    settings, _repository = upload_context
+    settings.max_upload_mb = 321
+    settings.max_video_minutes = 45
+    transport = httpx.ASGITransport(app=app)
+
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/api/v1/videos/limits")
+
+    assert response.status_code == 200
+    assert response.json() == {"max_upload_mb": 321, "max_video_minutes": 45}
 
 
 @pytest.mark.asyncio

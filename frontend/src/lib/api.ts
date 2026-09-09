@@ -17,6 +17,11 @@ export interface ApiVideo {
   error_code: string | null;
 }
 
+export interface ApiUploadLimits {
+  max_upload_mb: number;
+  max_video_minutes: number;
+}
+
 export interface ApiTranscriptSegment {
   seq: number;
   start_ms: number;
@@ -125,6 +130,10 @@ export async function listVideos(signal?: AbortSignal): Promise<ApiVideo[]> {
 
 export function getVideo(videoId: string, signal?: AbortSignal): Promise<ApiVideo> {
   return requestJson(`/videos/${videoId}`, { signal });
+}
+
+export function getUploadLimits(signal?: AbortSignal): Promise<ApiUploadLimits> {
+  return requestJson("/videos/limits", { signal });
 }
 
 export async function getTranscript(videoId: string, signal?: AbortSignal): Promise<ApiTranscriptSegment[]> {

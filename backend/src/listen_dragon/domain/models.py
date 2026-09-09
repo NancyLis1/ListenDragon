@@ -21,6 +21,11 @@ class VideoJobAccepted(BaseModel):
     state: JobState
 
 
+class UploadLimitsView(BaseModel):
+    max_upload_mb: int = Field(gt=0)
+    max_video_minutes: int = Field(gt=0)
+
+
 class VideoJobView(BaseModel):
     video_id: UUID
     state: JobState

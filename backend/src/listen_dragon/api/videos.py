@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 from pathlib import Path
 from typing import Annotated
@@ -8,16 +9,18 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, File, UploadFile, status
 from fastapi.responses import FileResponse
 
-from listen_dragon.api.errors import mapped_api_error
+from listen_dragon.api.errors import ApiError, mapped_api_error
 from listen_dragon.core.config import Settings, get_settings
 from listen_dragon.domain.models import (
     JobState,
     TranscriptSegmentView,
     TranscriptView,
+    UploadLimitsView,
     VideoJobAccepted,
     VideoListView,
     VideoView,
 )
+from listen_dragon.infrastructure.media import FfmpegMediaExtractor, MediaProcessingError
 from listen_dragon.infrastructure.sqlite_jobs import SqliteJobRepository, sqlite_path_from_url
 
 router = APIRouter(prefix="/videos", tags=["videos"])
@@ -39,11 +42,22 @@ def get_job_repository(
     return repository
 
 
+def get_media_extractor(
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> FfmpegMediaExtractor:
+    return FfmpegMediaExtractor(
+        ffmpeg_binary=settings.ffmpeg_binary,
+        ffprobe_binary=settings.ffprobe_binary,
+        max_video_minutes=settings.max_video_minutes,
+    )
+
+
 @router.post("", response_model=VideoJobAccepted, status_code=status.HTTP_202_ACCEPTED)
 async def upload_video(
     file: Annotated[UploadFile, File()],
     settings: Annotated[Settings, Depends(get_settings)],
     repository: Annotated[SqliteJobRepository, Depends(get_job_repository)],
+    extractor: Annotated[FfmpegMediaExtractor, Depends(get_media_extractor)],
 ) -> VideoJobAccepted:
     suffix = Path(file.filename or "").suffix.lower()
     expected_media_type = _ALLOWED_MEDIA_TYPES.get(suffix)
@@ -72,6 +86,18 @@ async def upload_video(
             raise mapped_api_error("UPLOAD_EMPTY")
 
         temporary_path.replace(source_path)
+        try:
+            duration_seconds = await asyncio.to_thread(extractor.probe_duration, source_path)
+        except MediaProcessingError as exc:
+            if exc.error_code == "VIDEO_TOO_LONG":
+                raise ApiError(
+                    status_code=422,
+                    error_code=exc.error_code,
+                    message=f"视频时长超过 {settings.max_video_minutes} 分钟上传限制。",
+                    retryable=False,
+                ) from exc
+            raise mapped_api_error(exc.error_code) from exc
+
         job = repository.create_video_job(
             video_id=video_id,
             original_name=Path(file.filename or "video").name,
@@ -79,6 +105,7 @@ async def upload_video(
             size_bytes=size_bytes,
             sha256=digest.hexdigest(),
             source_path=source_path,
+            duration_ms=max(1, round(duration_seconds * 1000)),
         )
         return VideoJobAccepted(video_id=job.video_id, state=job.state)
     except Exception:
@@ -92,6 +119,16 @@ async def upload_video(
         raise
     finally:
         await file.close()
+
+
+@router.get("/limits", response_model=UploadLimitsView)
+def get_upload_limits(
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> UploadLimitsView:
+    return UploadLimitsView(
+        max_upload_mb=settings.max_upload_mb,
+        max_video_minutes=settings.max_video_minutes,
+    )
 
 
 def _video_view(video) -> VideoView:

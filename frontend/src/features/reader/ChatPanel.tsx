@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { Icon } from "../../components/Icon";
 import { initialChat } from "../../data/mockLectures";
@@ -26,6 +26,12 @@ export function ChatPanel({ lecture, onSeek }: ChatPanelProps) {
   const [conversationId, setConversationId] = useState<string>();
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState("");
+  const messagesRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const messageList = messagesRef.current;
+    if (messageList) messageList.scrollTop = messageList.scrollHeight;
+  }, [messages, isSending, error]);
 
   const submitQuestion = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -70,7 +76,7 @@ export function ChatPanel({ lecture, onSeek }: ChatPanelProps) {
   return (
     <aside className="chat-panel" aria-label="课程问答">
       <header className="chat-header"><h1>问问这节课</h1><span className="demo-model"><Icon name="sparkles" />{lecture.isRemote ? "有据问答" : "体验问答"}</span></header>
-      <div className="chat-messages" aria-live="polite">
+      <div className="chat-messages" aria-live="polite" ref={messagesRef}>
         {messages.length === 0 && <p className="chat-empty">{lecture.isRemote ? "问题将基于视频转写回答，并附带可跳转证据。" : "输入问题体验样例问答。"}</p>}
         {messages.map((message) => (
           <article className={`chat-message chat-message--${message.role}`} key={message.id}>
