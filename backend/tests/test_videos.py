@@ -8,8 +8,8 @@ import pytest
 from listen_dragon.api.videos import get_job_repository, get_media_extractor
 from listen_dragon.core.config import Settings, get_settings
 from listen_dragon.domain.models import JobState, VisualAnalysisView, VisualObservation
-from listen_dragon.infrastructure.sqlite_jobs import SqliteJobRepository
 from listen_dragon.infrastructure.media import MediaProcessingError
+from listen_dragon.infrastructure.sqlite_jobs import SqliteJobRepository
 from listen_dragon.main import app
 from listen_dragon.services.contracts import TranscriptSegment
 
